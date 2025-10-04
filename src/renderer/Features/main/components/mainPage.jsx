@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import LeftNavBar from '../../left-navbar/left-nav-bar';
 import Leads from '../../leads/leads';
 import Buckets from '../../buckets/buckets';
+import Taskbar from '../../taskbar/taskbar';
 
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('buckets');
@@ -22,6 +23,7 @@ const MainPage = () => {
 
     return (
         <div className="main-container">
+            <Taskbar />
             <LeftNavBar activeTab={activeTab} onTabChange={handleTabChange} />
             <div className="content-area">
                 <header className="page-header">

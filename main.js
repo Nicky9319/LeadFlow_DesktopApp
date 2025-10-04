@@ -1044,7 +1044,7 @@ function createTray() {
   // Create tray menu
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show DonnaAI',
+      label: 'Show LeadFlow',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -1053,7 +1053,7 @@ function createTray() {
       }
     },
     {
-      label: 'Hide DonnaAI',
+      label: 'Hide LeadFlow',
       click: () => {
         if (mainWindow) {
           mainWindow.hide();
@@ -1093,7 +1093,7 @@ function createTray() {
   ]);
   
   // Set tray tooltip
-  tray.setToolTip('DonnaAI Desktop App');
+  tray.setToolTip('LeadFlow Desktop App');
   
   // Set tray menu
   tray.setContextMenu(contextMenu);
