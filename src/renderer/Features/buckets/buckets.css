@@ -305,56 +305,69 @@
 }
 
 .bucket-btn {
-    padding: 6px;
+    padding: 8px;
     border: none;
     border-radius: 6px;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 32px;
-    height: 32px;
+    transition: all 0.3s ease;
+    min-width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: transparent;
+    color: #8E8E93;
 }
 
 .bucket-btn.edit {
-    background: transparent;
+    background: none;
+    border: none;
     color: #8E8E93;
     font-size: 16px;
-    border: 1px solid #1C1C1E;
+    min-width: auto;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
 }
 
 .bucket-btn.edit:hover {
-    background: #1C1C1E;
-    color: #FFFFFF;
-    border-color: #2D2D2F;
+    background: none;
+    color: #007AFF;
+    text-shadow: 0 0 8px rgba(0, 122, 255, 0.6);
+    transform: scale(1.1);
 }
 
 .bucket-btn.save {
-    background: #00D09C;
-    color: #FFFFFF;
-    font-size: 18px;
+    background: transparent;
+    color: #8E8E93;
+    font-size: 20px;
     font-weight: bold;
 }
 
 .bucket-btn.save:hover {
-    background: #00b88a;
-    box-shadow: 0 2px 8px rgba(0, 208, 156, 0.3);
+    background: transparent;
+    color: #00D09C;
+    text-shadow: 0 0 8px rgba(0, 208, 156, 0.6);
+    transform: scale(1.1);
 }
 
 .bucket-btn.cancel {
-    background: #FF3B30;
-    color: #FFFFFF;
-    font-size: 16px;
+    background: transparent;
+    color: #8E8E93;
+    font-size: 18px;
     font-weight: bold;
 }
 
 .bucket-btn.cancel:hover {
-    background: #ff1f13;
-    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+    background: transparent;
+    color: #FF3B30;
+    text-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+    transform: scale(1.1);
 }
 
 /* Loading State */

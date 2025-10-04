@@ -68,7 +68,7 @@ const BucketCard = ({ bucket, onUpdateBucket, viewMode = 'grid' }) => {
                                     onClick={() => setIsEditing(true)}
                                     title="Edit bucket name"
                                 >
-                                    ✏️
+                                    ✎
                                 </button>
                             </>
                         )}
@@ -123,7 +123,7 @@ const BucketCard = ({ bucket, onUpdateBucket, viewMode = 'grid' }) => {
                                 onClick={() => setIsEditing(true)}
                                 title="Edit bucket name"
                             >
-                                ✏️
+                                ✎
                             </button>
                         </>
                     )}
