@@ -227,7 +227,7 @@ const FloatingWidget = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: screenshotAnimation === 'processing' 
-                  ? '0 4px 24px rgba(59, 130, 246, 0.35), 0 8px 48px rgba(99, 102, 241, 0.2)' 
+                  ? '0 4px 24px rgba(37, 99, 235, 0.4), 0 8px 48px rgba(59, 130, 246, 0.25)' 
                   : screenshotAnimation === 'success' 
                     ? '0 4px 20px rgba(16, 185, 129, 0.5), 0 8px 40px rgba(16, 185, 129, 0.25)' 
                     : isClicked 
@@ -236,7 +236,7 @@ const FloatingWidget = () => {
                         ? '0 6px 24px rgba(0, 0, 0, 0.6), 0 0 32px rgba(59, 130, 246, 0.35)' 
                         : '0 4px 16px rgba(0, 0, 0, 0.4)',
                 border: `1.5px solid ${
-                  screenshotAnimation === 'processing' ? 'rgba(99, 102, 241, 0.45)' : 
+                  screenshotAnimation === 'processing' ? 'rgba(37, 99, 235, 0.5)' : 
                   screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.6)' : 
                   isClicked ? 'rgba(59, 130, 246, 0.7)' : 
                   isHovered ? 'rgba(59, 130, 246, 0.6)' : 'rgba(255, 255, 255, 0.2)'
@@ -260,11 +260,12 @@ const FloatingWidget = () => {
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '4px',
-                    height: '4px',
+                    width: '5px',
+                    height: '5px',
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.9), rgba(59, 130, 246, 0.4))',
-                    boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)',
+                    background: 'radial-gradient(circle, rgba(30, 64, 175, 0.9), rgba(30, 64, 175, 0.4))',
+                    boxShadow: '0 0 10px rgba(30, 64, 175, 0.8)',
+                    filter: 'blur(0.5px)',
                     transform: 'translate(-50%, -50%)',
                     animation: 'orbitRotate1 2.5s linear infinite',
                     pointerEvents: 'none'
@@ -274,11 +275,12 @@ const FloatingWidget = () => {
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '4px',
-                    height: '4px',
+                    width: '5px',
+                    height: '5px',
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.9), rgba(99, 102, 241, 0.4))',
-                    boxShadow: '0 0 8px rgba(99, 102, 241, 0.8)',
+                    background: 'radial-gradient(circle, rgba(37, 99, 235, 0.9), rgba(37, 99, 235, 0.4))',
+                    boxShadow: '0 0 10px rgba(37, 99, 235, 0.8)',
+                    filter: 'blur(0.5px)',
                     transform: 'translate(-50%, -50%)',
                     animation: 'orbitRotate2 2.5s linear infinite',
                     pointerEvents: 'none'
@@ -288,11 +290,12 @@ const FloatingWidget = () => {
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '4px',
-                    height: '4px',
+                    width: '5px',
+                    height: '5px',
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.9), rgba(139, 92, 246, 0.4))',
-                    boxShadow: '0 0 8px rgba(139, 92, 246, 0.8)',
+                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.9), rgba(59, 130, 246, 0.4))',
+                    boxShadow: '0 0 10px rgba(59, 130, 246, 0.8)',
+                    filter: 'blur(0.5px)',
                     transform: 'translate(-50%, -50%)',
                     animation: 'orbitRotate3 2.5s linear infinite',
                     pointerEvents: 'none'
@@ -322,7 +325,7 @@ const FloatingWidget = () => {
                   width: '24px',
                   height: '24px',
                   background: screenshotAnimation === 'processing'
-                    ? 'linear-gradient(135deg, #3B82F6 0%, #6366F1 25%, #8B5CF6 50%, #6366F1 75%, #3B82F6 100%)'
+                    ? 'linear-gradient(135deg, #1E40AF 0%, #2563EB 25%, #3B82F6 50%, #2563EB 75%, #1E40AF 100%)'
                     : screenshotAnimation === 'success'
                       ? 'linear-gradient(135deg, #10B981, #34D399)'
                       : themeColors.primaryBlue,
@@ -330,10 +333,10 @@ const FloatingWidget = () => {
                   borderRadius: '50%',
                   position: 'relative',
                   transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  filter: screenshotAnimation === 'processing' ? 'blur(1px)' : 
-                         screenshotAnimation === 'success' ? 'blur(0.5px)' : 'blur(1px)',
+                  filter: screenshotAnimation === 'processing' ? 'blur(2px)' : 
+                         screenshotAnimation === 'success' ? 'blur(0.5px)' : 'blur(1.5px)',
                   boxShadow: screenshotAnimation === 'processing'
-                    ? '0 0 24px rgba(59, 130, 246, 0.7), 0 0 48px rgba(99, 102, 241, 0.5), 0 0 72px rgba(139, 92, 246, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.3)'
+                    ? '0 0 28px rgba(30, 64, 175, 0.7), 0 0 56px rgba(37, 99, 235, 0.5), 0 0 84px rgba(59, 130, 246, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.3)'
                     : screenshotAnimation === 'success'
                       ? '0 0 20px rgba(16, 185, 129, 0.9), 0 0 40px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.4)'
                       : isClicked
@@ -379,7 +382,7 @@ const FloatingWidget = () => {
                   transform: 'translate(-50%, -50%)',
                   borderRadius: '50%',
                   background: screenshotAnimation === 'processing'
-                    ? 'radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 35%, rgba(139, 92, 246, 0.08) 65%, transparent 100%)'
+                    ? 'radial-gradient(circle, rgba(30, 64, 175, 0.3) 0%, rgba(37, 99, 235, 0.2) 35%, rgba(59, 130, 246, 0.1) 65%, transparent 100%)'
                     : screenshotAnimation === 'success'
                       ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.15) 50%, transparent 100%)'
                       : `radial-gradient(circle, ${themeColors.primaryBlue}30 0%, ${themeColors.primaryBlue}15 50%, transparent 100%)`,
