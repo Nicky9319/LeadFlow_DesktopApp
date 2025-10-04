@@ -284,7 +284,7 @@ const ActionBar = () => {
               e.target.style.boxShadow = 'none';
             }}
           >
-            Action
+            Add
           </button>
         </div>
       </div>
