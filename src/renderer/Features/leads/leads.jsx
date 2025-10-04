@@ -1,138 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
+import LeadsContainer from './components/LeadsContainer';
 
 const Leads = () => {
-    const mockLeads = [
-        { 
-            id: 1, 
-            name: 'John Smith', 
-            email: 'john.smith@company.com', 
-            status: 'active', 
-            bucket: 'Hot Leads',
-            lastContact: '2 hours ago'
-        },
-        { 
-            id: 2, 
-            name: 'Sarah Johnson', 
-            email: 'sarah.j@business.com', 
-            status: 'active', 
-            bucket: 'Warm Leads',
-            lastContact: '1 day ago'
-        },
-        { 
-            id: 3, 
-            name: 'Mike Wilson', 
-            email: 'mike.wilson@corp.com', 
-            status: 'halted', 
-            bucket: 'Follow Up',
-            lastContact: '3 days ago'
-        },
-        { 
-            id: 4, 
-            name: 'Emily Davis', 
-            email: 'emily.d@startup.com', 
-            status: 'stopped', 
-            bucket: 'Cold Leads',
-            lastContact: '1 week ago'
-        },
-        { 
-            id: 5, 
-            name: 'Robert Brown', 
-            email: 'robert.brown@enterprise.com', 
-            status: 'active', 
-            bucket: 'Qualified',
-            lastContact: '30 minutes ago'
-        }
-    ];
+  // Sample leads data - replace with actual data from your store/API
+  const [leads, setLeads] = useState([
+    {
+      id: 1,
+      name: 'John Smith',
+      company: 'Tech Solutions Inc.',
+      email: 'john.smith@techsolutions.com',
+      phone: '+1 (555) 123-4567',
+      location: 'San Francisco, CA',
+      status: 'Hot',
+      value: 50000,
+      notes: 'Interested in our premium package. Follow up next week.',
+      tags: ['Enterprise', 'High Value', 'Decision Maker']
+    },
+    {
+      id: 2,
+      name: 'Sarah Johnson',
+      company: 'Marketing Pro',
+      email: 'sarah@marketingpro.com',
+      phone: '+1 (555) 987-6543',
+      location: 'New York, NY',
+      status: 'Warm',
+      value: 25000,
+      notes: 'Looking for a solution to streamline their marketing processes.',
+      tags: ['SMB', 'Marketing', 'Quick Decision']
+    },
+    {
+      id: 3,
+      name: 'Mike Chen',
+      company: 'StartupXYZ',
+      email: 'mike@startupxyz.com',
+      phone: '+1 (555) 456-7890',
+      location: 'Austin, TX',
+      status: 'Cold',
+      value: 15000,
+      notes: 'Early stage startup, budget conscious but very interested.',
+      tags: ['Startup', 'Budget Conscious', 'Tech Savvy']
+    },
+    {
+      id: 4,
+      name: 'Emily Davis',
+      company: 'Global Corp',
+      email: 'emily.davis@globalcorp.com',
+      phone: '+1 (555) 321-0987',
+      location: 'Chicago, IL',
+      status: 'Hot',
+      value: 75000,
+      notes: 'Large enterprise client, multiple decision makers involved.',
+      tags: ['Enterprise', 'High Value', 'Complex Sale']
+    },
+    {
+      id: 5,
+      name: 'David Wilson',
+      company: 'Local Business',
+      email: 'david@localbusiness.com',
+      phone: '+1 (555) 654-3210',
+      location: 'Miami, FL',
+      status: 'Warm',
+      value: 10000,
+      notes: 'Small business owner looking to modernize their operations.',
+      tags: ['SMB', 'Local', 'Traditional Business']
+    }
+  ]);
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'active': return '#00D09C';
-            case 'halted': return '#FF9500';
-            case 'stopped': return '#FF3B30';
-            default: return '#8E8E93';
-        }
-    };
 
-    const getStatusLabel = (status) => {
-        switch (status) {
-            case 'active': return 'Active';
-            case 'halted': return 'Halted';
-            case 'stopped': return 'Stopped';
-            default: return 'Unknown';
-        }
-    };
-
-    return (
-        <div className="leads-container">
-            <div className="section-header">
-                <h2 className="section-title">Leads</h2>
-                <p className="section-description">Manage and track your leads</p>
-            </div>
-            
-            <div className="leads-actions">
-                <button className="add-lead-btn">
-                    <span className="add-icon">+</span>
-                    <span>Add New Lead</span>
-                </button>
-                <div className="leads-filters">
-                    <select className="filter-select">
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="halted">Halted</option>
-                        <option value="stopped">Stopped</option>
-                    </select>
-                    <select className="filter-select">
-                        <option value="all">All Buckets</option>
-                        <option value="hot">Hot Leads</option>
-                        <option value="warm">Warm Leads</option>
-                        <option value="cold">Cold Leads</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div className="leads-table">
-                <div className="table-header">
-                    <div className="header-cell">Name</div>
-                    <div className="header-cell">Email</div>
-                    <div className="header-cell">Status</div>
-                    <div className="header-cell">Bucket</div>
-                    <div className="header-cell">Last Contact</div>
-                    <div className="header-cell">Actions</div>
-                </div>
-                
-                <div className="table-body">
-                    {mockLeads.map((lead) => (
-                        <div key={lead.id} className="table-row">
-                            <div className="table-cell" data-label="Name:">
-                                <div className="lead-name">{lead.name}</div>
-                            </div>
-                            <div className="table-cell" data-label="Email:">
-                                <div className="lead-email">{lead.email}</div>
-                            </div>
-                            <div className="table-cell" data-label="Status:">
-                                <div className="status-badge" style={{ backgroundColor: getStatusColor(lead.status) }}>
-                                    {getStatusLabel(lead.status)}
-                                </div>
-                            </div>
-                            <div className="table-cell" data-label="Bucket:">
-                                <div className="bucket-tag">{lead.bucket}</div>
-                            </div>
-                            <div className="table-cell" data-label="Last Contact:">
-                                <div className="last-contact">{lead.lastContact}</div>
-                            </div>
-                            <div className="table-cell" data-label="Actions:">
-                                <div className="action-buttons">
-                                    <button className="action-btn view">View</button>
-                                    <button className="action-btn edit">Edit</button>
-                                    <button className="action-btn delete">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+  return (
+    <div className="leads-page p-6 bg-[#000000] min-h-screen">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#FFFFFF] mb-2">Leads</h1>
+          <p className="text-[#8E8E93]">
+            Browse through your leads one at a time with our card-based interface
+          </p>
         </div>
-    );
+        
+        <LeadsContainer leads={leads} />
+      </div>
+    </div>
+  );
 };
 
 export default Leads;
