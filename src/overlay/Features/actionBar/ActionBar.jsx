@@ -266,36 +266,7 @@ const ActionBar = () => {
       </style>
       
       {/* Global Shortcut Feedback Notification */}
-      {globalShortcutFeedback && (
-        <div
-          className="global-shortcut-feedback"
-          style={{
-            position: 'fixed',
-            left: safeLeft,
-            top: position.y - 40,
-            transform: 'translateX(0)',
-            zIndex: 10003,
-            background: 'linear-gradient(135deg, #10B981, #059669)',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: '600',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            pointerEvents: 'none'
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 12l2 2 4-4"/>
-            <circle cx="12" cy="12" r="9"/>
-          </svg>
-          Screenshot taken (Ctrl+1)
-        </div>
-      )}
+      {globalShortcutFeedback }
       <div style={{
         position: 'fixed',
         left: safeLeft,
