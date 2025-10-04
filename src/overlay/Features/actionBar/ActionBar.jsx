@@ -24,17 +24,73 @@ const ActionBar = () => {
     Math.min(window.innerWidth - barWidth - 10, position.x + 60);
 
   const dropdownOptions = buckets.map(bucket => bucket.name);
+  
+  // Debug logging
+  console.log('ActionBar current buckets:', buckets, 'dropdownOptions:', dropdownOptions);
 
   useEffect(() => {
     const loadBuckets = async () => {
       try {
         const fetchedBuckets = await getAllBuckets();
+        console.log('ActionBar loaded buckets:', fetchedBuckets);
         dispatch(setBuckets(fetchedBuckets));
       } catch (error) {
         console.error('Error loading buckets in ActionBar:', error);
       }
     };
     loadBuckets();
+    
+    // listen for updates from main window - payload comes as { eventName, payload }
+    const onBucketsUpdated = (event, data) => {
+      console.log('ActionBar received IPC event:', event, data);
+      try {
+        if (!data) {
+          console.warn('ActionBar: No data in IPC event');
+          return;
+        }
+        const { eventName, payload } = data;
+        console.log('ActionBar: Parsed eventName:', eventName, 'payload:', payload);
+        if (eventName === 'buckets-updated' && payload && Array.isArray(payload)) {
+          console.log('ActionBar: Updating buckets with:', payload);
+          dispatch(setBuckets(payload));
+        } else {
+          console.log('ActionBar: Ignoring event:', eventName);
+        }
+      } catch (err) {
+        console.error('Error applying buckets-updated payload:', err);
+      }
+    };
+    
+    // Try both electronAPI and widgetAPI
+    if (window && window.electronAPI && window.electronAPI.onEventFromMain) {
+      console.log('ActionBar: Setting up IPC listener via electronAPI');
+      window.electronAPI.onEventFromMain(onBucketsUpdated);
+    } else if (window && window.widgetAPI && window.widgetAPI.onEventFromMain) {
+      console.log('ActionBar: Setting up IPC listener via widgetAPI');
+      window.widgetAPI.onEventFromMain(onBucketsUpdated);
+    } else {
+      console.warn('ActionBar: No IPC API available. electronAPI:', !!window.electronAPI, 'widgetAPI:', !!window.widgetAPI);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (window && window.electronAPI && window.electronAPI.removeAllListeners) {
+        try { 
+          console.log('ActionBar: Cleaning up electronAPI IPC listeners');
+          window.electronAPI.removeAllListeners('eventFromMain'); 
+        } catch (e) {
+          console.warn('ActionBar: Error cleaning up electronAPI listeners:', e);
+        }
+      }
+      if (window && window.widgetAPI && window.widgetAPI.removeAllListeners) {
+        try { 
+          console.log('ActionBar: Cleaning up widgetAPI IPC listeners');
+          window.widgetAPI.removeAllListeners('eventFromMain'); 
+        } catch (e) {
+          console.warn('ActionBar: Error cleaning up widgetAPI listeners:', e);
+        }
+      }
+    };
   }, [dispatch]);
 
   const handleOptionSelect = (option) => {

@@ -37,6 +37,19 @@ const Buckets = () => {
             if (response.status_code === 200) {
                 dispatch(updateBucket({ id: bucketId, name: newName }));
                 console.log('Bucket updated successfully:', response.content);
+                // notify widget of updated buckets
+                try {
+                    const updated = bucketsArray.map(b => b.id === bucketId ? { ...b, name: newName } : b);
+                    console.log('Main: Sending bucket update to widget:', updated);
+                    if (window && window.electronAPI && window.electronAPI.sendToWidget) {
+                        const result = await window.electronAPI.sendToWidget('buckets-updated', updated);
+                        console.log('Main: sendToWidget update result:', result);
+                    } else {
+                        console.warn('Main: electronAPI.sendToWidget not available for update');
+                    }
+                } catch (err) {
+                    console.error('Failed to notify widget about updated bucket:', err);
+                }
             } else {
                 console.error('Failed to update bucket:', response);
             }
@@ -63,6 +76,20 @@ const Buckets = () => {
 
                 dispatch(addBucket(newBucket));
                 console.log('Bucket created successfully:', newBucket, 'raw response:', response);
+
+                // Notify widget/overlay about updated buckets so its dropdown stays in sync
+                try {
+                    const updated = Array.isArray(bucketsArray) ? [...bucketsArray, newBucket] : [newBucket];
+                    console.log('Main: Sending buckets-updated to widget:', updated);
+                    if (window && window.electronAPI && window.electronAPI.sendToWidget) {
+                        const result = await window.electronAPI.sendToWidget('buckets-updated', updated);
+                        console.log('Main: sendToWidget result:', result);
+                    } else {
+                        console.warn('Main: electronAPI.sendToWidget not available');
+                    }
+                } catch (err) {
+                    console.error('Failed to notify widget about new bucket:', err);
+                }
             } else {
                 console.error('Failed to create bucket: ', response);
             }
@@ -78,6 +105,19 @@ const Buckets = () => {
             if (response.status_code === 200) {
                 dispatch(deleteBucket(bucketId));
                 console.log('Bucket deleted successfully:', response.content);
+                // notify widget of updated buckets
+                try {
+                    const updated = bucketsArray.filter(b => b.id !== bucketId);
+                    console.log('Main: Sending bucket delete to widget:', updated);
+                    if (window && window.electronAPI && window.electronAPI.sendToWidget) {
+                        const result = await window.electronAPI.sendToWidget('buckets-updated', updated);
+                        console.log('Main: sendToWidget delete result:', result);
+                    } else {
+                        console.warn('Main: electronAPI.sendToWidget not available for delete');
+                    }
+                } catch (err) {
+                    console.error('Failed to notify widget about deleted bucket:', err);
+                }
             } else {
                 console.error('Failed to delete bucket:', response);
             }
