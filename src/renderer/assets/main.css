@@ -1,0 +1,9 @@
+@import './base.css';
+@import "tailwindcss";
+
+body {
+  width: 100%;
+  overflow: hidden;
+  /* background-image: url('./wavy-lines.svg'); */
+  user-select: none;
+}
