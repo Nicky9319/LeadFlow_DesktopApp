@@ -1,0 +1,174 @@
+/* App base CSS (restored) */
+
+* { box-sizing: border-box; }
+html, body, #root { 
+  height: 100%; 
+  width: 100%; 
+  margin: 0; 
+  background: transparent !important;
+}
+
+body {
+  background: transparent !important;
+  overflow: hidden;
+}
+
+#root {
+  background: transparent !important;
+}
+
+/* Aurora animations */
+@keyframes auroraGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes particleFall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(30px) translateX(-10px) scale(1);
+  }
+  40% {
+    opacity: 0.8;
+    transform: translateY(80px) translateX(15px) scale(1.2);
+  }
+  60% {
+    opacity: 0.6;
+    transform: translateY(140px) translateX(-5px) scale(0.8);
+  }
+  80% {
+    opacity: 0.3;
+    transform: translateY(200px) translateX(10px) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(280px) translateX(0) scale(0.3);
+  }
+}
+
+/* New animations for sidebar and modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2), 0 0 45px rgba(0, 122, 255, 0.1);
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.85;
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.5), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.15);
+  }
+}
+
+@keyframes heartbeatColor {
+  0%, 100% {
+    background-color: #007AFF;
+    filter: blur(8px);
+  }
+  50% {
+    background-color: #000000;
+    filter: blur(1px);
+  }
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,31 @@
+{
+    "status": 200,
+    "message":"All tasks have been retrieved successfully",
+    "payload": [
+        {
+            "task_id": 1,
+            "task_status": "running",
+            "task_query": "Generate monthly report"
+        },
+        {
+            "task_id": 2,
+            "task_status": "completed",
+            "task_query": "Generate sales report for 2023-10-01"
+        },
+        {
+            "task_id": 3,
+            "task_status": "failed",
+            "task_query": "Backup database"
+        },
+        {
+            "task_id": 4,
+            "task_status": "halted",
+            "task_query": "make the powerbi presentation for me and then send it to my boss"
+        },
+        {
+            "task_id": 5,
+            "task_status": "stopped",
+            "task_query": "send message to aarush I would be late"
+        }
+    ]
+}

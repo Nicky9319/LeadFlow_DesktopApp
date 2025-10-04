@@ -1,0 +1,10 @@
+{
+    "status": 200,
+    "message": "Environment variables retrieved successfully from database 'donna'",
+    "data": [
+        {
+            "name": "OPENAI_API_KEY",
+            "value": "nothing"
+        }
+    ]
+}

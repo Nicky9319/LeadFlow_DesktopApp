@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: setup
+appId: com.donnaai.app
+productName: DonnaAI
 directories:
   buildResources: build
 files:
@@ -11,11 +11,11 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: setup
+  executableName: DonnaAI
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
+  shortcutName: DonnaAI
+  uninstallDisplayName: DonnaAI
   createDesktopShortcut: always
 mac:
   entitlementsInherit: build/entitlements.mac.plist
