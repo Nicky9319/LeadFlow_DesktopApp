@@ -38,6 +38,9 @@ if (process.contextIsolated) {
       getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
       onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
       onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
+
+      // Screenshot functionality
+      captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -63,6 +66,9 @@ if (process.contextIsolated) {
       getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
       onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
       onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
+
+      // Screenshot functionality
+      captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
     });
 
   }
@@ -99,6 +105,9 @@ else{
     getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
     onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
     onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
+
+    // Screenshot functionality
+    captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),
@@ -123,5 +132,8 @@ else{
     getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
     onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
     onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
+
+    // Screenshot functionality
+    captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
   }
 }

@@ -480,6 +480,49 @@ function createMainAndWidgetWindows() {
 
 // IPC Handle Section !!! ------------------------------------------------------------------------------------------------------
 
+// Screenshot capture and save handler
+const { nativeImage, desktopCapturer, screen } = require('electron');
+ipcMain.handle('capture-and-save-screenshot', async (event) => {
+  try {
+    console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
+    
+    // Get the primary display dimensions
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.bounds;
+    console.log(`[Screenshot] Primary display size: ${width}x${height}`);
+    
+    // Get all available sources (screens) with full resolution thumbnails
+    const sources = await desktopCapturer.getSources({ 
+      types: ['screen'],
+      thumbnailSize: { width: width, height: height }
+    });
+    if (!sources.length) {
+      throw new Error('No screens found');
+    }
+    
+    // Use the first screen (primary screen)
+    const source = sources[0];
+    console.log(`[Screenshot] Using screen source: ${source.name}`);
+    
+    // Get the full resolution thumbnail (screenshot) from the source
+    const image = source.thumbnail;
+    const actualSize = image.getSize();
+    console.log(`[Screenshot] Captured image size: ${actualSize.width}x${actualSize.height}`);
+    const buffer = image.toPNG();
+    
+    // Save to local directory (same as main.js)
+    const screenshotDir = __dirname;
+    const fileName = `screenshot_${Date.now()}.png`;
+    const filePath = path.join(screenshotDir, fileName);
+    fs.writeFileSync(filePath, buffer);
+    console.log(`[Screenshot] Screenshot saved at: ${filePath}`);
+    
+    return { success: true, filePath, resolution: actualSize };
+  } catch (err) {
+    console.error('[Screenshot] Failed to capture or save screenshot:', err);
+    return { success: false, error: err.message };
+  }
+});
 
 ipcMain.handle('get-ip-address', async (event) => {
 });

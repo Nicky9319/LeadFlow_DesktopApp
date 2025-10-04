@@ -98,9 +98,20 @@ const ActionBar = () => {
     setIsDropdownOpen(false);
   };
 
-  const handleActionButton = () => {
+  // Capture screenshot and save locally
+  const handleActionButton = async () => {
     console.log(`Action button clicked with option: ${selectedOption}`);
-    // Add your action logic here based on selected option
+    // Electron desktopCapturer is only available in renderer
+    if (window && window.electronAPI && window.electronAPI.captureAndSaveScreenshot) {
+      try {
+        await window.electronAPI.captureAndSaveScreenshot();
+        console.log('Screenshot captured and saved successfully.');
+      } catch (err) {
+        console.error('Failed to capture or save screenshot:', err);
+      }
+    } else {
+      alert('Screenshot functionality is not available.');
+    }
   };
 
   // Close dropdown when clicking outside
