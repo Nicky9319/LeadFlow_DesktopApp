@@ -498,29 +498,47 @@ async function handleGlobalScreenshot() {
   
   try {
     // Send processing notification to widget window if it exists
-    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
-        widgetWindow.webContents.send('eventFromMain', {
+        console.log('Sending screenshot-processing event to widget window');
+        widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-processing',
           payload: { status: 'processing', timestamp: now }
         });
+        console.log('Screenshot-processing event sent successfully');
       } catch (sendError) {
         console.warn('Failed to send processing notification to widget:', sendError);
       }
+    } else {
+      console.warn('Widget window not available for processing notification:', {
+        exists: !!widgetWindow,
+        hasWindow: widgetWindow ? !!widgetWindow.window : 'N/A',
+        windowDestroyed: widgetWindow && widgetWindow.window ? widgetWindow.window.isDestroyed() : 'N/A',
+        hasWebContents: widgetWindow && widgetWindow.window ? !!widgetWindow.window.webContents : 'N/A'
+      });
     }
     
     const result = await captureScreenshot();
     
     // Send success notification to widget window if it exists
-    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
-        widgetWindow.webContents.send('eventFromMain', {
+        console.log('Sending screenshot-taken event to widget window');
+        widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-taken',
           payload: { success: true, timestamp: now }
         });
+        console.log('Screenshot-taken event sent successfully');
       } catch (sendError) {
         console.warn('Failed to send success notification to widget:', sendError);
       }
+    } else {
+      console.warn('Widget window not available for success notification:', {
+        exists: !!widgetWindow,
+        hasWindow: widgetWindow ? !!widgetWindow.window : 'N/A',
+        windowDestroyed: widgetWindow && widgetWindow.window ? widgetWindow.window.isDestroyed() : 'N/A',
+        hasWebContents: widgetWindow && widgetWindow.window ? !!widgetWindow.window.webContents : 'N/A'
+      });
     }
     
     console.log('Global shortcut screenshot captured successfully:', result);
@@ -529,9 +547,9 @@ async function handleGlobalScreenshot() {
     console.error('Global shortcut screenshot failed:', error);
     
     // Send error notification to widget window if it exists
-    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
-        widgetWindow.webContents.send('eventFromMain', {
+        widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-error',
           payload: { success: false, error: error.message }
         });

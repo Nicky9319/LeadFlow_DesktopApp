@@ -30,6 +30,56 @@ const ActionBar = () => {
   // Debug logging
   console.log('ActionBar current buckets:', buckets, 'dropdownOptions:', dropdownOptions);
 
+  // Event handler function (moved outside useEffect for testability)
+  const onBucketsUpdated = (event, data) => {
+    console.log('ActionBar received IPC event:', event, data);
+    try {
+      if (!data) {
+        console.warn('ActionBar: No data in IPC event');
+        return;
+      }
+      const { eventName, payload } = data;
+      console.log('ActionBar: Parsed eventName:', eventName, 'payload:', payload);
+      
+      if (eventName === 'buckets-updated' && payload && Array.isArray(payload)) {
+        console.log('ActionBar: Updating buckets with:', payload);
+        dispatch(setBuckets(payload));
+      } else if (eventName === 'screenshot-processing' && payload) {
+        console.log('ActionBar: Global screenshot processing - updating UI state');
+        setScreenshotStatus('processing');
+        setGlobalShortcutFeedback(true);
+        console.log('ActionBar: UI state updated to processing');
+      } else if (eventName === 'screenshot-taken' && payload && payload.success) {
+        console.log('ActionBar: Global screenshot taken successfully - updating UI state');
+        setScreenshotStatus('success');
+        setGlobalShortcutFeedback(true);
+        console.log('ActionBar: UI state updated to success');
+        // Show success feedback for 2.5 seconds, then reset (same as button click)
+        setTimeout(() => {
+          console.log('ActionBar: Resetting UI state to ready after success');
+          setScreenshotStatus('ready');
+          setGlobalShortcutFeedback(false);
+        }, 2500);
+      } else if (eventName === 'screenshot-error' && payload && !payload.success) {
+        console.log('ActionBar: Global screenshot failed:', payload.error);
+        setScreenshotStatus('ready');
+        setGlobalShortcutFeedback(false);
+      } else {
+        console.log('ActionBar: Ignoring event:', eventName);
+      }
+    } catch (err) {
+      console.error('Error applying IPC event payload:', err);
+    }
+  };
+
+  // Debug function to test screenshot events (exposed to window for console testing)
+  window.testScreenshotEvent = (eventName, payload) => {
+    console.log('Testing screenshot event:', eventName, payload);
+    const mockEvent = {};
+    const mockData = { eventName, payload };
+    onBucketsUpdated(mockEvent, mockData);
+  };
+
   useEffect(() => {
     const loadBuckets = async () => {
       try {
@@ -42,55 +92,41 @@ const ActionBar = () => {
     };
     loadBuckets();
     
-    // listen for updates from main window - payload comes as { eventName, payload }
-    const onBucketsUpdated = (event, data) => {
-      console.log('ActionBar received IPC event:', event, data);
-      try {
-        if (!data) {
-          console.warn('ActionBar: No data in IPC event');
-          return;
+    // Setup IPC listeners with retry logic
+    const setupIpcListeners = () => {
+      console.log('ActionBar: Attempting to setup IPC listeners');
+      console.log('ActionBar: Available APIs:', {
+        electronAPI: !!window.electronAPI,
+        electronAPIOnEventFromMain: !!(window.electronAPI && window.electronAPI.onEventFromMain),
+        widgetAPI: !!window.widgetAPI,
+        widgetAPIOnEventFromMain: !!(window.widgetAPI && window.widgetAPI.onEventFromMain)
+      });
+
+      if (window && window.electronAPI && window.electronAPI.onEventFromMain) {
+        console.log('ActionBar: Setting up IPC listener via electronAPI');
+        try {
+          window.electronAPI.onEventFromMain(onBucketsUpdated);
+          console.log('ActionBar: electronAPI listener setup successful');
+        } catch (error) {
+          console.error('ActionBar: Error setting up electronAPI listener:', error);
         }
-        const { eventName, payload } = data;
-        console.log('ActionBar: Parsed eventName:', eventName, 'payload:', payload);
-        
-        if (eventName === 'buckets-updated' && payload && Array.isArray(payload)) {
-          console.log('ActionBar: Updating buckets with:', payload);
-          dispatch(setBuckets(payload));
-        } else if (eventName === 'screenshot-processing' && payload) {
-          console.log('ActionBar: Global screenshot processing');
-          setScreenshotStatus('processing');
-          setGlobalShortcutFeedback(true);
-        } else if (eventName === 'screenshot-taken' && payload && payload.success) {
-          console.log('ActionBar: Global screenshot taken successfully');
-          setScreenshotStatus('success');
-          setGlobalShortcutFeedback(true);
-          // Show success feedback for 2.5 seconds, then reset (same as button click)
-          setTimeout(() => {
-            setScreenshotStatus('ready');
-            setGlobalShortcutFeedback(false);
-          }, 2500);
-        } else if (eventName === 'screenshot-error' && payload && !payload.success) {
-          console.log('ActionBar: Global screenshot failed:', payload.error);
-          setScreenshotStatus('ready');
-          setGlobalShortcutFeedback(false);
-        } else {
-          console.log('ActionBar: Ignoring event:', eventName);
+      } else if (window && window.widgetAPI && window.widgetAPI.onEventFromMain) {
+        console.log('ActionBar: Setting up IPC listener via widgetAPI');
+        try {
+          window.widgetAPI.onEventFromMain(onBucketsUpdated);
+          console.log('ActionBar: widgetAPI listener setup successful');
+        } catch (error) {
+          console.error('ActionBar: Error setting up widgetAPI listener:', error);
         }
-      } catch (err) {
-        console.error('Error applying IPC event payload:', err);
+      } else {
+        console.warn('ActionBar: No IPC API available. electronAPI:', !!window.electronAPI, 'widgetAPI:', !!window.widgetAPI);
+        // Retry after a short delay
+        setTimeout(setupIpcListeners, 100);
       }
     };
-    
-    // Try both electronAPI and widgetAPI
-    if (window && window.electronAPI && window.electronAPI.onEventFromMain) {
-      console.log('ActionBar: Setting up IPC listener via electronAPI');
-      window.electronAPI.onEventFromMain(onBucketsUpdated);
-    } else if (window && window.widgetAPI && window.widgetAPI.onEventFromMain) {
-      console.log('ActionBar: Setting up IPC listener via widgetAPI');
-      window.widgetAPI.onEventFromMain(onBucketsUpdated);
-    } else {
-      console.warn('ActionBar: No IPC API available. electronAPI:', !!window.electronAPI, 'widgetAPI:', !!window.widgetAPI);
-    }
+
+    // Initial setup
+    setupIpcListeners();
     
     // Cleanup function
     return () => {
@@ -449,42 +485,7 @@ const ActionBar = () => {
         </div>
       </div>
 
-      {/* Global Shortcut Feedback Overlay */}
-      {globalShortcutFeedback && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: 'rgba(0, 0, 0, 0.9)',
-          color: '#ffffff',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontWeight: '600',
-          zIndex: 10000,
-          animation: 'slideInRight 0.3s ease-out',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-          border: `2px solid ${screenshotStatus === 'processing' ? '#EF4444' : screenshotStatus === 'success' ? '#10B981' : '#6B7280'}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: screenshotStatus === 'processing' ? '#EF4444' : screenshotStatus === 'success' ? '#10B981' : '#6B7280',
-            animation: screenshotStatus === 'processing' ? 'pulse 1s infinite' : 'none',
-            boxShadow: screenshotStatus === 'processing' ? '0 0 8px rgba(239, 68, 68, 0.6)' : 
-                       screenshotStatus === 'success' ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none'
-          }} />
-          <span>
-            {screenshotStatus === 'processing' ? 'Taking Screenshot... (Ctrl+1)' : 
-             screenshotStatus === 'success' ? 'Screenshot Saved! (Ctrl+1)' : 
-             'Screenshot Ready (Ctrl+1)'}
-          </span>
-        </div>
-      )}
+
     </HoverComponent>
   );
 };

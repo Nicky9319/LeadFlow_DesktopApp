@@ -16,11 +16,64 @@ const FloatingWidget = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false);
+  const [screenshotAnimation, setScreenshotAnimation] = useState('idle'); // 'idle', 'processing', 'success'
   const dispatch = useDispatch();
 
   // Debug: Log when component mounts
   useEffect(() => {
     console.log('LeadFlow FloatingWidget mounted');
+  }, []);
+
+  // Screenshot event listener
+  useEffect(() => {
+    const onScreenshotEvent = (event, data) => {
+      console.log('FloatingWidget received screenshot event:', data);
+      try {
+        if (!data) return;
+        const { eventName, payload } = data;
+        
+        if (eventName === 'screenshot-processing') {
+          console.log('FloatingWidget: Screenshot processing - starting animation');
+          setScreenshotAnimation('processing');
+                } else if (eventName === 'screenshot-taken' && payload && payload.success) {
+          console.log('FloatingWidget: Global screenshot taken successfully');
+          // Just reset the animation state without showing success animation
+          setScreenshotAnimation(null);
+        } else if (eventName === 'screenshot-error') {
+          console.log('FloatingWidget: Screenshot error - reset animation');
+          setScreenshotAnimation('idle');
+        }
+      } catch (err) {
+        console.error('FloatingWidget: Error handling screenshot event:', err);
+      }
+    };
+
+    // Setup IPC listeners for screenshot events
+    if (window && window.electronAPI && window.electronAPI.onEventFromMain) {
+      console.log('FloatingWidget: Setting up screenshot event listener via electronAPI');
+      window.electronAPI.onEventFromMain(onScreenshotEvent);
+    } else if (window && window.widgetAPI && window.widgetAPI.onEventFromMain) {
+      console.log('FloatingWidget: Setting up screenshot event listener via widgetAPI');
+      window.widgetAPI.onEventFromMain(onScreenshotEvent);
+    }
+
+    // Cleanup
+    return () => {
+      if (window && window.electronAPI && window.electronAPI.removeAllListeners) {
+        try {
+          window.electronAPI.removeAllListeners('eventFromMain');
+        } catch (e) {
+          console.warn('FloatingWidget: Error cleaning up electronAPI listeners:', e);
+        }
+      }
+      if (window && window.widgetAPI && window.widgetAPI.removeAllListeners) {
+        try {
+          window.widgetAPI.removeAllListeners('eventFromMain');
+        } catch (e) {
+          console.warn('FloatingWidget: Error cleaning up widgetAPI listeners:', e);
+        }
+      }
+    };
   }, []);
 
   // Keyboard shortcut handler
@@ -169,24 +222,41 @@ const FloatingWidget = () => {
               style={{
                 width: '40px',
                 height: '40px',
-                backgroundColor: isClicked ? themeColors.primaryBlue + '20' : themeColors.primaryBackground,
+                backgroundColor: screenshotAnimation === 'processing' ? '#EF4444' + '30' : 
+                               screenshotAnimation === 'success' ? '#10B981' + '30' : 
+                               isClicked ? themeColors.primaryBlue + '20' : themeColors.primaryBackground,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isClicked 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.4)' 
-                  : isHovered 
-                    ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.3)' 
-                    : '0 2px 10px rgba(0, 0, 0, 0.3)',
-                border: `1px solid ${isClicked ? 'rgba(59, 130, 246, 0.7)' : isHovered ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
-                outline: `1px solid ${isClicked ? 'rgba(59, 130, 246, 0.5)' : isHovered ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                boxShadow: screenshotAnimation === 'processing' 
+                  ? '0 4px 20px rgba(239, 68, 68, 0.6), 0 0 40px rgba(239, 68, 68, 0.4)' 
+                  : screenshotAnimation === 'success' 
+                    ? '0 4px 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.4)' 
+                    : isClicked 
+                      ? '0 2px 8px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.4)' 
+                      : isHovered 
+                        ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.3)' 
+                        : '0 2px 10px rgba(0, 0, 0, 0.3)',
+                border: `1px solid ${screenshotAnimation === 'processing' ? 'rgba(239, 68, 68, 0.7)' : 
+                                    screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.7)' : 
+                                    isClicked ? 'rgba(59, 130, 246, 0.7)' : 
+                                    isHovered ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                outline: `1px solid ${screenshotAnimation === 'processing' ? 'rgba(239, 68, 68, 0.5)' : 
+                                     screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.5)' : 
+                                     isClicked ? 'rgba(59, 130, 246, 0.5)' : 
+                                     isHovered ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
                 outlineOffset: '1px',
                 cursor: 'pointer',
                 position: 'relative',
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isClicked ? 'scale(0.9)' : isHovered ? 'scale(1.1)' : 'scale(1)',
-                pointerEvents: 'auto'
+                transform: screenshotAnimation === 'processing' ? 'scale(1.2)' : 
+                          screenshotAnimation === 'success' ? 'scale(1.15)' : 
+                          isClicked ? 'scale(0.9)' : 
+                          isHovered ? 'scale(1.1)' : 'scale(1)',
+                pointerEvents: 'auto',
+                animation: screenshotAnimation === 'processing' ? 'pulse 0.8s ease-in-out infinite' : 
+                          screenshotAnimation === 'success' ? 'bounce 0.6s ease-in-out' : 'none'
               }}
             >
               {/* Blue inner circle */}
@@ -194,18 +264,26 @@ const FloatingWidget = () => {
                 style={{
                   width: '16px',
                   height: '16px',
-                  backgroundColor: themeColors.primaryBlue,
+                  backgroundColor: screenshotAnimation === 'processing' ? '#EF4444' : 
+                                 screenshotAnimation === 'success' ? '#10B981' : 
+                                 themeColors.primaryBlue,
                   borderRadius: '50%',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isClicked
-                    ? `0 0 35px ${themeColors.primaryBlue}CC, 0 0 60px ${themeColors.primaryBlue}99, 0 0 85px ${themeColors.primaryBlue}66`
-                    : isHovered 
-                      ? `0 0 25px ${themeColors.primaryBlue}99, 0 0 50px ${themeColors.primaryBlue}66, 0 0 75px ${themeColors.primaryBlue}33`
-                      : `0 0 15px ${themeColors.primaryBlue}66, 0 0 30px ${themeColors.primaryBlue}33, 0 0 45px ${themeColors.primaryBlue}1A`,
+                  boxShadow: screenshotAnimation === 'processing'
+                    ? '0 0 35px #EF4444CC, 0 0 60px #EF444499, 0 0 85px #EF444466'
+                    : screenshotAnimation === 'success'
+                      ? '0 0 35px #10B981CC, 0 0 60px #10B98199, 0 0 85px #10B98166'
+                      : isClicked
+                        ? `0 0 35px ${themeColors.primaryBlue}CC, 0 0 60px ${themeColors.primaryBlue}99, 0 0 85px ${themeColors.primaryBlue}66`
+                        : isHovered 
+                          ? `0 0 25px ${themeColors.primaryBlue}99, 0 0 50px ${themeColors.primaryBlue}66, 0 0 75px ${themeColors.primaryBlue}33`
+                          : `0 0 15px ${themeColors.primaryBlue}66, 0 0 30px ${themeColors.primaryBlue}33, 0 0 45px ${themeColors.primaryBlue}1A`,
                   filter: 'blur(1px)',
                   pointerEvents: 'none',
                   position: 'relative',
-                  animation: 'heartbeatColor 2s ease-in-out infinite'
+                  animation: screenshotAnimation === 'processing' ? 'pulse 0.5s ease-in-out infinite' : 
+                            screenshotAnimation === 'success' ? 'heartbeatColor 0.8s ease-in-out 3' : 
+                            'heartbeatColor 2s ease-in-out infinite'
                 }}
               >
                 {/* Additional glow layer for enhanced heartbeat effect */}
@@ -217,10 +295,13 @@ const FloatingWidget = () => {
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, ${themeColors.primaryBlue}40 0%, ${themeColors.primaryBlue}14 70%, transparent 100%)`,
-                    filter: 'blur(4px)',
-                    animation: 'heartbeat 2s ease-in-out infinite',
-                    animationDelay: '0.5s',
+                    background: screenshotAnimation === 'processing' 
+                      ? 'radial-gradient(circle, #EF444420 0%, #EF444408 70%, transparent 100%)'
+                      : `radial-gradient(circle, ${themeColors.primaryBlue}25 0%, ${themeColors.primaryBlue}08 70%, transparent 100%)`,
+                    filter: 'blur(2px)',
+                    animation: screenshotAnimation === 'processing' ? 'pulse 0.8s ease-in-out infinite' : 
+                              'heartbeat 2s ease-in-out infinite',
+                    animationDelay: screenshotAnimation === 'processing' ? '0s' : '0.5s',
                     pointerEvents: 'none',
                     zIndex: 0
                   }}
