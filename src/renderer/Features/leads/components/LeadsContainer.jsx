@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import LeadCard from './LeadCard';
 
@@ -196,11 +197,11 @@ const LeadsContainer = ({ leads = [] }) => {
         setLastSwipeTime(currentTime);
         
         if (distance > 0) {
-          // Swipe left (finger moves left) -> Previous lead
-          handlePrevious();
-        } else {
-          // Swipe right (finger moves right) -> Next lead
+          // Swipe left (finger moves left) -> Next lead
           handleNext();
+        } else {
+          // Swipe right (finger moves right) -> Previous lead
+          handlePrevious();
         }
         
         // Reset swipe progress after a longer delay to prevent multiple swipes
@@ -215,11 +216,11 @@ const LeadsContainer = ({ leads = [] }) => {
       const isRightSwipe = distance < -rightThreshold;
 
       if (isLeftSwipe) {
-        // Swipe left -> Previous lead
-        handlePrevious();
-      } else if (isRightSwipe) {
-        // Swipe right -> Next lead
+        // Swipe left -> Next lead
         handleNext();
+      } else if (isRightSwipe) {
+        // Swipe right -> Previous lead
+        handlePrevious();
       }
     }
   };
@@ -237,11 +238,11 @@ const LeadsContainer = ({ leads = [] }) => {
         setLastSwipeTime(currentTime);
         
         if (e.deltaX > 0) {
-          // Scroll right -> Previous lead
-          handlePrevious();
-        } else if (e.deltaX < 0) {
-          // Scroll left -> Next lead
+          // Scroll right -> Next lead
           handleNext();
+        } else if (e.deltaX < 0) {
+          // Scroll left -> Previous lead
+          handlePrevious();
         }
         
         // Reset swipe progress after a longer delay to prevent multiple swipes
@@ -253,11 +254,11 @@ const LeadsContainer = ({ leads = [] }) => {
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > wheelThreshold) {
         e.preventDefault();
         if (e.deltaX > 0) {
-          // Scroll right -> Previous lead
-          handlePrevious();
-        } else if (e.deltaX < 0) {
-          // Scroll left -> Next lead
+          // Scroll right -> Next lead
           handleNext();
+        } else if (e.deltaX < 0) {
+          // Scroll left -> Previous lead
+          handlePrevious();
         }
       }
     }
