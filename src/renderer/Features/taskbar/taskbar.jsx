@@ -62,10 +62,10 @@ const Taskbar = () => {
         <div
             className="w-full h-8 flex items-center justify-between px-3 relative"
             style={{
-                backgroundColor: '#1a1a1a',
-                borderBottom: '1px solid #2d2d2d',
-                WebkitAppRegion: 'drag', // Makes the entire bar draggable
-                userSelect: 'none' // Prevents text selection
+                backgroundColor: '#000000', // Match main window background
+                borderBottom: '1px solid #222', // Subtle border for separation
+                WebkitAppRegion: 'drag',
+                userSelect: 'none'
             }}
             onContextMenu={handleContextMenu}
             onClick={handleClickOutside}
