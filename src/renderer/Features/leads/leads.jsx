@@ -1,126 +1,129 @@
 import React, { useState, useEffect } from 'react';
 import LeadsContainer from './components/LeadsContainer';
+import { getAllLeads, updateLeadStatus as apiUpdateLeadStatus, updateLeadNotes as apiUpdateLeadNotes } from '../../../services/leadsService';
+import { getAllBuckets } from '../../../services/bucketsServices';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
+  const [buckets, setBuckets] = useState([]);
+  const [selectedBucketId, setSelectedBucketId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bucketsLoading, setBucketsLoading] = useState(true);
 
-  // Mock API function to simulate fetching leads
-  const fetchLeads = async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Mock data based on the API structure provided
-    return {
-      leads: [
-        {
-          leadId: "9ccae302-b638-4283-9714-d305c56a1280",
-          url: "https://linkedin.com/in/johnsmith",
-          username: "johnsmith",
-          platform: "linkedin",
-          status: "new",
-          notes: "Tech executive interested in our solutions"
-        },
-        {
-          leadId: "dc9b72bd-1f19-44e3-a978-fa7963c08156",
-          url: "https://instagram.com/sarahjohnson_marketing",
-          username: "sarahjohnson_marketing",
-          platform: "insta",
-          status: "contacted",
-          notes: "Marketing influencer with 50k followers, responded positively to DM"
-        },
-        {
-          leadId: "96eba49d-94c0-48c8-b60f-c9263330bb94",
-          url: "https://reddit.com/u/mikechen_startup",
-          username: "mikechen_startup",
-          platform: "reddit",
-          status: "qualified",
-          notes: "Active in r/entrepreneur, shared interest in our product after discussion"
-        },
-        {
-          leadId: "db6b9f6d-9837-4de4-9cfd-62b592e90721",
-          url: "https://behance.net/emilydavis",
-          username: "emilydavis",
-          platform: "behance",
-          status: "new",
-          notes: "Creative director with impressive portfolio, potential design client"
-        },
-        {
-          leadId: "3ae40387-6ca5-4bca-9001-629ae045043c",
-          url: "https://pinterest.com/davidwilson_diy",
-          username: "davidwilson_diy",
-          platform: "pinterest",
-          status: "contacted",
-          notes: "DIY content creator, interested in our tools for small business"
-        },
-        {
-          leadId: "7f8e9d1c-4b5a-6c7d-8e9f-0a1b2c3d4e5f",
-          url: "https://x.com/alexreynolds",
-          username: "alexreynolds",
-          platform: "x",
-          status: "qualified",
-          notes: "Tech journalist with 25k followers, interested in featuring our product"
-        },
-        {
-          leadId: "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
-          url: "mailto:jessica.martinez@techstartup.com",
-          username: "jessica.martinez",
-          platform: "email",
-          status: "new",
-          notes: "CEO of promising fintech startup, found us through cold outreach"
-        }
-      ]
-    };
+  // Fetch leads from API
+  const fetchLeads = async (bucketId = null) => {
+    try {
+      setLoading(true);
+      const leadsData = await getAllLeads(bucketId);
+      setLeads(leadsData);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      setLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch buckets from API
+  const fetchBuckets = async () => {
+    try {
+      setBucketsLoading(true);
+      const bucketsData = await getAllBuckets();
+      setBuckets(bucketsData);
+    } catch (error) {
+      console.error('Error fetching buckets:', error);
+      setBuckets([]);
+    } finally {
+      setBucketsLoading(false);
+    }
   };
 
   // Function to update lead notes
-  const updateLeadNotes = (leadId, newNotes) => {
-    setLeads(prevLeads => 
-      prevLeads.map(lead => 
-        lead.leadId === leadId 
-          ? { ...lead, notes: newNotes }
-          : lead
-      )
-    );
+  const updateLeadNotes = async (leadId, newNotes) => {
+    try {
+      const response = await apiUpdateLeadNotes(leadId, newNotes);
+      if (response.status_code === 200) {
+        // Update local state on successful API call
+        setLeads(prevLeads => 
+          prevLeads.map(lead => 
+            lead.leadId === leadId 
+              ? { ...lead, notes: newNotes }
+              : lead
+          )
+        );
+        console.log('Notes updated successfully for lead:', leadId);
+      } else {
+        console.error('Failed to update notes:', response.content);
+      }
+    } catch (error) {
+      console.error('Error updating lead notes:', error);
+    }
   };
 
   // Function to update lead status
-  const updateLeadStatus = (leadId, newStatus) => {
-    setLeads(prevLeads => 
-      prevLeads.map(lead => 
-        lead.leadId === leadId 
-          ? { ...lead, status: newStatus }
-          : lead
-      )
-    );
+  const updateLeadStatus = async (leadId, newStatus) => {
+    try {
+      const response = await apiUpdateLeadStatus(leadId, newStatus);
+      if (response.status_code === 200) {
+        // Update local state on successful API call
+        setLeads(prevLeads => 
+          prevLeads.map(lead => 
+            lead.leadId === leadId 
+              ? { ...lead, status: newStatus }
+              : lead
+          )
+        );
+        console.log('Status updated successfully for lead:', leadId);
+      } else {
+        console.error('Failed to update status:', response.content);
+      }
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+    }
   };
 
-  // Fetch leads on component mount
+  // Handle bucket selection
+  const handleBucketChange = (bucketId) => {
+    setSelectedBucketId(bucketId);
+    fetchLeads(bucketId);
+  };
+
+  // Handle refetch all leads
+  const handleRefetchLeads = () => {
+    fetchLeads(selectedBucketId);
+  };
+
+  // Fetch buckets and leads on component mount
   useEffect(() => {
-    const loadLeads = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchLeads();
-        setLeads(response.leads);
-      } catch (error) {
-        console.error('Error fetching leads:', error);
-      } finally {
-        setLoading(false);
+    const loadData = async () => {
+      // Fetch buckets first
+      const bucketsData = await getAllBuckets();
+      setBuckets(bucketsData);
+      setBucketsLoading(false);
+      
+      // Set first bucket as default if available
+      if (bucketsData.length > 0) {
+        const firstBucketId = bucketsData[0].id;
+        setSelectedBucketId(firstBucketId);
+        await fetchLeads(firstBucketId);
+      } else {
+        // If no buckets, load all leads
+        await fetchLeads();
       }
     };
 
-    loadLeads();
+    loadData();
   }, []);
 
 
-  if (loading) {
+  if (loading || bucketsLoading) {
     return (
       <div className="leads-page p-6 bg-[#000000] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
               <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-[#8E8E93]">Loading leads...</p>
+              <p className="text-[#8E8E93]">{bucketsLoading ? 'Loading buckets...' : 'Loading leads...'}</p>
             </div>
           </div>
         </div>
@@ -133,9 +136,55 @@ const Leads = () => {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#FFFFFF] mb-2">Leads</h1>
-          <p className="text-[#8E8E93]">
+          <p className="text-[#8E8E93] mb-4">
             Browse through your leads one at a time with our card-based interface
           </p>
+          
+          {/* Bucket Selection and Controls */}
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="bucket-select" className="text-sm font-medium text-[#E5E5E7]">
+                Filter by Bucket:
+              </label>
+              <select
+                id="bucket-select"
+                value={selectedBucketId || ''}
+                onChange={(e) => handleBucketChange(e.target.value)}
+                className="px-3 py-2 bg-[#1C1C1E] border border-[#007AFF] rounded-md text-[#E5E5E7] text-sm focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
+              >
+                {buckets.map((bucket) => (
+                  <option key={bucket.id} value={bucket.id}>
+                    {bucket.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <button
+              onClick={handleRefetchLeads}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-[#007AFF] text-white rounded-md hover:bg-[#0056CC] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refetch Leads
+                </>
+              )}
+            </button>
+          </div>
+          
+          {/* Lead count display */}
+          <div className="text-sm text-[#8E8E93] mb-4">
+            Showing {leads.length} leads from bucket: {buckets.find(b => b.id === selectedBucketId)?.name || 'Unknown'}
+          </div>
         </div>
         
         <LeadsContainer leads={leads} updateLeadNotes={updateLeadNotes} updateLeadStatus={updateLeadStatus} />

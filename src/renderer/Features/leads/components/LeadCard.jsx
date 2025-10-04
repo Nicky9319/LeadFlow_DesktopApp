@@ -175,14 +175,14 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
           : 'opacity-0 scale-95 translate-x-4 pointer-events-none'
       }`}
     >
-      <div className="bg-[#111111] rounded-lg shadow-lg border border-[#1C1C1E] p-4 max-w-md mx-auto max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-[#007AFF] rounded-full flex items-center justify-center text-white font-semibold text-lg">
+      <div className="bg-[#111111] rounded-lg shadow-lg border border-[#1C1C1E] p-4 max-w-4xl mx-auto max-h-[70vh] overflow-y-auto">
+        {/* Header - More compact */}
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-10 h-10 bg-[#007AFF] rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {lead.username?.charAt(0)?.toUpperCase() || 'L'}
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-[#FFFFFF]">
+            <h3 className="text-base font-semibold text-[#FFFFFF]">
               @{lead.username || 'Unknown User'}
             </h3>
             <div className="flex items-center gap-1">
@@ -214,126 +214,129 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
           </div>
         )}
 
-        {/* Notes/Description */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-[#E5E5E7]">Notes</h4>
-            {!isEditingNotes && (
-              <button
-                onClick={handleNotesEdit}
-                className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] transition-colors"
-                title="Edit notes"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-            )}
-          </div>
-          
-          {isEditingNotes ? (
-            <div className="space-y-2">
-              <textarea
-                value={editedNotes}
-                onChange={(e) => setEditedNotes(e.target.value)}
-                onKeyDown={handleNotesKeyPress}
-                className="w-full h-16 px-2 py-2 text-sm bg-[#1C1C1E] border border-[#007AFF] rounded-md text-[#E5E5E7] focus:outline-none focus:ring-1 focus:ring-[#007AFF] resize-none"
-                placeholder="Add your notes here..."
-                autoFocus
-              />
-              <div className="flex justify-end space-x-2">
+        {/* Main Content - Horizontal Layout */}
+        <div className="flex gap-4">
+          {/* Notes Section - Left Side */}
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-[#E5E5E7]">Notes</h4>
+              {!isEditingNotes && (
                 <button
-                  onClick={handleNotesCancel}
-                  className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#3D3D3F] rounded transition-colors"
+                  onClick={handleNotesEdit}
+                  className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] transition-colors"
+                  title="Edit notes"
                 >
-                  Cancel
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                 </button>
-                <button
-                  onClick={handleNotesSave}
-                  className="px-2 py-1 text-xs bg-[#007AFF] text-white hover:bg-[#0056CC] rounded transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div 
-              className="text-sm text-[#E5E5E7] bg-[#1C1C1E] p-2 rounded-md min-h-[50px] cursor-pointer hover:bg-[#2D2D2F] transition-colors"
-              onClick={handleNotesEdit}
-            >
-              {lead.notes || (
-                <span className="text-[#8E8E93] italic">Click to add notes...</span>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Editable Status */}
-        <div className="pt-3 border-t border-[#1C1C1E]">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-[#E5E5E7]">Status</h4>
-            {!isEditingStatus && (
-              <button
-                onClick={handleStatusEdit}
-                className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] transition-colors"
-                title="Edit status"
+            
+            {isEditingNotes ? (
+              <div className="space-y-2">
+                <textarea
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  onKeyDown={handleNotesKeyPress}
+                  className="w-full h-20 px-2 py-2 text-sm bg-[#1C1C1E] border border-[#007AFF] rounded-md text-[#E5E5E7] focus:outline-none focus:ring-1 focus:ring-[#007AFF] resize-none"
+                  placeholder="Add your notes here..."
+                  autoFocus
+                />
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={handleNotesCancel}
+                    className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#3D3D3F] rounded transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleNotesSave}
+                    className="px-2 py-1 text-xs bg-[#007AFF] text-white hover:bg-[#0056CC] rounded transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="text-sm text-[#E5E5E7] bg-[#1C1C1E] p-2 rounded-md min-h-[60px] cursor-pointer hover:bg-[#2D2D2F] transition-colors"
+                onClick={handleNotesEdit}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
+                {lead.notes || (
+                  <span className="text-[#8E8E93] italic">Click to add notes...</span>
+                )}
+              </div>
             )}
           </div>
-          
-          {isEditingStatus ? (
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={editedStatus}
-                onChange={(e) => setEditedStatus(e.target.value)}
-                onKeyDown={handleStatusKeyPress}
-                className="w-full px-2 py-2 text-sm bg-[#1C1C1E] border border-[#007AFF] rounded-md text-[#E5E5E7] focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
-                placeholder="Type custom status..."
-                autoFocus
-              />
-              <div className="flex flex-wrap gap-1">
-                {['cold message', 'first follow up', 'second follow up', 'meeting', 'closed'].map((status) => (
+
+          {/* Status Section - Right Side */}
+          <div className="w-64">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-[#E5E5E7]">Status</h4>
+              {!isEditingStatus && (
+                <button
+                  onClick={handleStatusEdit}
+                  className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] transition-colors"
+                  title="Edit status"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            
+            {isEditingStatus ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editedStatus}
+                  onChange={(e) => setEditedStatus(e.target.value)}
+                  onKeyDown={handleStatusKeyPress}
+                  className="w-full px-2 py-2 text-sm bg-[#1C1C1E] border border-[#007AFF] rounded-md text-[#E5E5E7] focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
+                  placeholder="Type custom status..."
+                  autoFocus
+                />
+                <div className="flex flex-wrap gap-1">
+                  {['cold message', 'first follow up', 'second follow up', 'meeting', 'closed'].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setEditedStatus(status)}
+                      className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#007AFF] hover:text-white rounded transition-colors capitalize"
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-end space-x-2">
                   <button
-                    key={status}
-                    onClick={() => setEditedStatus(status)}
-                    className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#007AFF] hover:text-white rounded transition-colors capitalize"
+                    onClick={handleStatusCancel}
+                    className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#3D3D3F] rounded transition-colors"
                   >
-                    {status}
+                    Cancel
                   </button>
-                ))}
+                  <button
+                    onClick={handleStatusSave}
+                    className="px-2 py-1 text-xs bg-[#007AFF] text-white hover:bg-[#0056CC] rounded transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={handleStatusCancel}
-                  className="px-2 py-1 text-xs bg-[#2D2D2F] text-[#E5E5E7] hover:bg-[#3D3D3F] rounded transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleStatusSave}
-                  className="px-2 py-1 text-xs bg-[#007AFF] text-white hover:bg-[#0056CC] rounded transition-colors"
-                >
-                  Save
-                </button>
+            ) : (
+              <div 
+                className="cursor-pointer hover:bg-[#2D2D2F] transition-colors p-2 rounded"
+                onClick={handleStatusEdit}
+              >
+                <span className={`inline-block px-2 py-1 text-sm font-medium rounded-full capitalize ${
+                  getStatusColor(lead.status)
+                }`}>
+                  {lead.status || 'Cold Message'}
+                </span>
               </div>
-            </div>
-          ) : (
-            <div 
-              className="cursor-pointer hover:bg-[#2D2D2F] transition-colors p-2 rounded"
-              onClick={handleStatusEdit}
-            >
-              <span className={`inline-block px-2 py-1 text-sm font-medium rounded-full capitalize ${
-                getStatusColor(lead.status)
-              }`}>
-                {lead.status || 'Cold Message'}
-              </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
       </div>
