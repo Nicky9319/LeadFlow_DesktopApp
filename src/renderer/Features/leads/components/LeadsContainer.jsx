@@ -15,6 +15,10 @@ const LeadsContainer = ({ leads = [] }) => {
   const [showSensitivityControl, setShowSensitivityControl] = useState(false);
   const [isEditingSensitivity, setIsEditingSensitivity] = useState(false);
   const [editSensitivityValue, setEditSensitivityValue] = useState('');
+  const [isEditingLeftSensitivity, setIsEditingLeftSensitivity] = useState(false);
+  const [editLeftSensitivityValue, setEditLeftSensitivityValue] = useState('');
+  const [isEditingRightSensitivity, setIsEditingRightSensitivity] = useState(false);
+  const [editRightSensitivityValue, setEditRightSensitivityValue] = useState('');
 
   // Reset to first lead when leads change
   useEffect(() => {
@@ -100,6 +104,62 @@ const LeadsContainer = ({ leads = [] }) => {
 
   const handleSensitivityBlur = () => {
     handleSensitivityEdit();
+  };
+
+  // Left sensitivity editing functions
+  const handleLeftSensitivityClick = () => {
+    setIsEditingLeftSensitivity(true);
+    setEditLeftSensitivityValue(leftSwipeSensitivity.toString());
+  };
+
+  const handleLeftSensitivityEdit = () => {
+    const value = parseInt(editLeftSensitivityValue);
+    if (value >= 50 && value <= 300) {
+      setLeftSwipeSensitivity(value);
+    }
+    setIsEditingLeftSensitivity(false);
+    setEditLeftSensitivityValue('');
+  };
+
+  const handleLeftSensitivityKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleLeftSensitivityEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditingLeftSensitivity(false);
+      setEditLeftSensitivityValue('');
+    }
+  };
+
+  const handleLeftSensitivityBlur = () => {
+    handleLeftSensitivityEdit();
+  };
+
+  // Right sensitivity editing functions
+  const handleRightSensitivityClick = () => {
+    setIsEditingRightSensitivity(true);
+    setEditRightSensitivityValue(rightSwipeSensitivity.toString());
+  };
+
+  const handleRightSensitivityEdit = () => {
+    const value = parseInt(editRightSensitivityValue);
+    if (value >= 50 && value <= 300) {
+      setRightSwipeSensitivity(value);
+    }
+    setIsEditingRightSensitivity(false);
+    setEditRightSensitivityValue('');
+  };
+
+  const handleRightSensitivityKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleRightSensitivityEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditingRightSensitivity(false);
+      setEditRightSensitivityValue('');
+    }
+  };
+
+  const handleRightSensitivityBlur = () => {
+    handleRightSensitivityEdit();
   };
 
   // Touchpad swipe functionality - now uses dynamic sensitivity
@@ -340,9 +400,30 @@ const LeadsContainer = ({ leads = [] }) => {
                           background: `linear-gradient(to right, #FF3B30 0%, #FF3B30 ${((leftSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((leftSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
                         }}
                       />
-                      <span className="text-xs text-[#FF3B30] font-mono bg-[#1C1C1E] px-2 py-1 rounded">
-                        {leftSwipeSensitivity}px
-                      </span>
+                      {isEditingLeftSensitivity ? (
+                        <div className="flex items-center space-x-1">
+                          <input
+                            type="number"
+                            min="50"
+                            max="300"
+                            value={editLeftSensitivityValue}
+                            onChange={(e) => setEditLeftSensitivityValue(e.target.value)}
+                            onKeyPress={handleLeftSensitivityKeyPress}
+                            onBlur={handleLeftSensitivityBlur}
+                            autoFocus
+                            className="w-16 px-2 py-1 text-xs bg-[#1C1C1E] border border-[#FF3B30] rounded text-[#FFFFFF] focus:outline-none focus:ring-1 focus:ring-[#FF3B30]"
+                          />
+                          <span className="text-xs text-[#8E8E93]">px</span>
+                        </div>
+                      ) : (
+                        <span 
+                          className="text-xs text-[#FF3B30] font-mono bg-[#1C1C1E] px-2 py-1 rounded cursor-pointer hover:bg-[#2D2D2F] transition-colors"
+                          onClick={handleLeftSensitivityClick}
+                          title="Click to edit"
+                        >
+                          {leftSwipeSensitivity}px
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -361,9 +442,30 @@ const LeadsContainer = ({ leads = [] }) => {
                           background: `linear-gradient(to right, #00D09C 0%, #00D09C ${((rightSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((rightSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
                         }}
                       />
-                      <span className="text-xs text-[#00D09C] font-mono bg-[#1C1C1E] px-2 py-1 rounded">
-                        {rightSwipeSensitivity}px
-                      </span>
+                      {isEditingRightSensitivity ? (
+                        <div className="flex items-center space-x-1">
+                          <input
+                            type="number"
+                            min="50"
+                            max="300"
+                            value={editRightSensitivityValue}
+                            onChange={(e) => setEditRightSensitivityValue(e.target.value)}
+                            onKeyPress={handleRightSensitivityKeyPress}
+                            onBlur={handleRightSensitivityBlur}
+                            autoFocus
+                            className="w-16 px-2 py-1 text-xs bg-[#1C1C1E] border border-[#00D09C] rounded text-[#FFFFFF] focus:outline-none focus:ring-1 focus:ring-[#00D09C]"
+                          />
+                          <span className="text-xs text-[#8E8E93]">px</span>
+                        </div>
+                      ) : (
+                        <span 
+                          className="text-xs text-[#00D09C] font-mono bg-[#1C1C1E] px-2 py-1 rounded cursor-pointer hover:bg-[#2D2D2F] transition-colors"
+                          onClick={handleRightSensitivityClick}
+                          title="Click to edit"
+                        >
+                          {rightSwipeSensitivity}px
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
