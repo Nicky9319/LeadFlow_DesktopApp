@@ -252,60 +252,66 @@ const FloatingWidget = () => {
                 overflow: 'visible'
               }}
             >
-              {/* Outer pulse rings - visible during processing */}
+              {/* Orbital particles - visible during processing */}
               {screenshotAnimation === 'processing' && (
                 <>
+                  {/* Particle 1 */}
                   <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '100%',
-                    height: '100%',
+                    width: '4px',
+                    height: '4px',
                     borderRadius: '50%',
-                    border: '2px solid rgba(59, 130, 246, 0.5)',
+                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.9), rgba(59, 130, 246, 0.4))',
+                    boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)',
                     transform: 'translate(-50%, -50%)',
-                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    animation: 'orbitRotate1 2.5s linear infinite',
                     pointerEvents: 'none'
                   }} />
+                  {/* Particle 2 */}
                   <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '100%',
-                    height: '100%',
+                    width: '4px',
+                    height: '4px',
                     borderRadius: '50%',
-                    border: '2px solid rgba(99, 102, 241, 0.45)',
+                    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.9), rgba(99, 102, 241, 0.4))',
+                    boxShadow: '0 0 8px rgba(99, 102, 241, 0.8)',
                     transform: 'translate(-50%, -50%)',
-                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.5s',
+                    animation: 'orbitRotate2 2.5s linear infinite',
                     pointerEvents: 'none'
                   }} />
+                  {/* Particle 3 */}
                   <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    width: '100%',
-                    height: '100%',
+                    width: '4px',
+                    height: '4px',
                     borderRadius: '50%',
-                    border: '2px solid rgba(139, 92, 246, 0.4)',
+                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.9), rgba(139, 92, 246, 0.4))',
+                    boxShadow: '0 0 8px rgba(139, 92, 246, 0.8)',
                     transform: 'translate(-50%, -50%)',
-                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1s',
+                    animation: 'orbitRotate3 2.5s linear infinite',
                     pointerEvents: 'none'
                   }} />
                 </>
               )}
 
-              {/* Success confirmation ring */}
+              {/* Success glow burst */}
               {screenshotAnimation === 'success' && (
                 <div style={{
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  width: '100%',
-                  height: '100%',
+                  width: '120%',
+                  height: '120%',
                   borderRadius: '50%',
-                  border: '3px solid rgba(16, 185, 129, 0.8)',
+                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3), transparent 70%)',
                   transform: 'translate(-50%, -50%)',
-                  animation: 'successPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  animation: 'successBurst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   pointerEvents: 'none'
                 }} />
               )}
