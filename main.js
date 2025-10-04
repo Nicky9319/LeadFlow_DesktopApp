@@ -92,16 +92,18 @@ class UndetectableWidgetWindow {
       height: 1080,
       frame: false,
       alwaysOnTop: true,
-      // skipTaskbar: this.undetectabilityEnabled, // Hide from taskbar when undetectable
+      skipTaskbar: true, // Always hide from taskbar/Alt+Tab
       resizable: false,
       transparent: true,
       focusable: false,
       hasShadow: false,
-      // show: false, // Don't show until ready
+      show: false, // Don't show initially
       fullscreen: true,
-      // type: "panel", // Special window type for undetectability
+      type: isWindows ? "toolbar" : "panel", // Windows: toolbar type hides from Alt+Tab
       roundedCorners: false,
       minimizable: false,
+      maximizable: false,
+      closable: false,
       hiddenInMissionControl: true, // macOS: hide from Mission Control
       webPreferences: {
         preload: join(__dirname, '../preload/preload.js'),
@@ -130,8 +132,29 @@ class UndetectableWidgetWindow {
     // Set initial mouse event ignoring - start with click-through enabled
     this.setIgnoreMouseEvents(true, { forward: true });
 
+    // Platform-specific additional hiding measures
+    if (isWindows) {
+      // Windows-specific: Set as system window to avoid Alt+Tab
+      this.window.setAppDetails({
+        appId: 'leadflow.widget.overlay',
+        appIconPath: '',
+        appIconIndex: 0,
+        relaunchCommand: '',
+        relaunchDisplayName: ''
+      });
+    }
+
     // Event handlers
     this.setupEventHandlers();
+
+    // Ensure window is hidden from taskbar/Alt+Tab
+    this.window.setSkipTaskbar(true);
+    
+    // Additional Windows-specific hiding
+    if (isWindows) {
+      // Force the window to not appear in task switcher
+      this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    }
   }
 
   setupEventHandlers() {
@@ -156,6 +179,8 @@ class UndetectableWidgetWindow {
     this.window.on('ready-to-show', () => {
       logger.debug('Widget window ready to show');
       if (this.window && !this.window.isDestroyed()) {
+        // Ensure skipTaskbar is set
+        this.window.setSkipTaskbar(true);
         this.window.hide();
         if (!this.devToolsOpen) {
           this.window.setIgnoreMouseEvents(true, { forward: true });
@@ -258,7 +283,8 @@ class UndetectableWidgetWindow {
   toggleUndetectability() {
     this.undetectabilityEnabled = !this.undetectabilityEnabled;
     this.setContentProtection(this.undetectabilityEnabled);
-    this.window.setSkipTaskbar(this.undetectabilityEnabled);
+    // Keep skipTaskbar always true to hide from Alt+Tab
+    this.window.setSkipTaskbar(true);
     
     // Ensure window stays fullscreen when toggling undetectability
     if (this.window.isFullScreen()) {
@@ -269,6 +295,14 @@ class UndetectableWidgetWindow {
   }
 
   show() {
+    // Ensure skipTaskbar is set before showing
+    this.window.setSkipTaskbar(true);
+    
+    // Windows-specific: Additional measures to stay hidden from Alt+Tab
+    if (isWindows) {
+      this.window.setAlwaysOnTop(true, "screen-saver", 1);
+    }
+    
     this.window.show();
   }
 
