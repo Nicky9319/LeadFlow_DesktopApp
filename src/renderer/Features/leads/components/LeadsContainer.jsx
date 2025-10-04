@@ -8,6 +8,10 @@ const LeadsContainer = ({ leads = [] }) => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [swipeSensitivity, setSwipeSensitivity] = useState(150);
+  const [leftSwipeSensitivity, setLeftSwipeSensitivity] = useState(150);
+  const [rightSwipeSensitivity, setRightSwipeSensitivity] = useState(150);
+  const [useSeparateSensitivity, setUseSeparateSensitivity] = useState(false);
+  const [singleSwipeMode, setSingleSwipeMode] = useState(false);
   const [showSensitivityControl, setShowSensitivityControl] = useState(false);
   const [isEditingSensitivity, setIsEditingSensitivity] = useState(false);
   const [editSensitivityValue, setEditSensitivityValue] = useState('');
@@ -99,7 +103,12 @@ const LeadsContainer = ({ leads = [] }) => {
   };
 
   // Touchpad swipe functionality - now uses dynamic sensitivity
-  const minSwipeDistance = swipeSensitivity;
+  const getSwipeThreshold = (direction) => {
+    if (useSeparateSensitivity) {
+      return direction === 'left' ? leftSwipeSensitivity : rightSwipeSensitivity;
+    }
+    return swipeSensitivity;
+  };
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -107,34 +116,75 @@ const LeadsContainer = ({ leads = [] }) => {
   };
 
   const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (singleSwipeMode) {
+      // In single swipe mode, we don't track movement, just detect any swipe
+      setTouchEnd(e.targetTouches[0].clientX);
+    } else {
+      setTouchEnd(e.targetTouches[0].clientX);
+    }
   };
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (singleSwipeMode) {
+      // In single swipe mode, any horizontal movement triggers navigation
+      if (Math.abs(distance) > 10) { // Minimal threshold just to detect direction
+        if (distance > 0) {
+          // Swipe left (finger moves left) -> Previous lead
+          handlePrevious();
+        } else {
+          // Swipe right (finger moves right) -> Next lead
+          handleNext();
+        }
+      }
+    } else {
+      // Normal mode with sensitivity thresholds
+      const leftThreshold = getSwipeThreshold('left');
+      const rightThreshold = getSwipeThreshold('right');
+      
+      const isLeftSwipe = distance > leftThreshold;
+      const isRightSwipe = distance < -rightThreshold;
 
-    if (isLeftSwipe) {
-      handleNext();
-    } else if (isRightSwipe) {
-      handlePrevious();
+      if (isLeftSwipe) {
+        // Swipe left -> Previous lead
+        handlePrevious();
+      } else if (isRightSwipe) {
+        // Swipe right -> Next lead
+        handleNext();
+      }
     }
   };
 
   // Mouse wheel horizontal scroll for touchpad
   const handleWheel = (e) => {
     // Check if it's a horizontal scroll (touchpad two-finger swipe)
-    // Uses dynamic sensitivity based on user setting
-    const wheelThreshold = Math.max(20, swipeSensitivity / 3); // Scale wheel sensitivity
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > wheelThreshold) {
-      e.preventDefault();
-      if (e.deltaX > 0) {
-        handleNext();
-      } else if (e.deltaX < 0) {
-        handlePrevious();
+    if (singleSwipeMode) {
+      // In single swipe mode, any horizontal movement triggers navigation
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
+        e.preventDefault();
+        if (e.deltaX > 0) {
+          // Scroll right -> Previous lead
+          handlePrevious();
+        } else if (e.deltaX < 0) {
+          // Scroll left -> Next lead
+          handleNext();
+        }
+      }
+    } else {
+      // Normal mode with sensitivity thresholds
+      const wheelThreshold = Math.max(20, swipeSensitivity / 3); // Scale wheel sensitivity
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > wheelThreshold) {
+        e.preventDefault();
+        if (e.deltaX > 0) {
+          // Scroll right -> Previous lead
+          handlePrevious();
+        } else if (e.deltaX < 0) {
+          // Scroll left -> Next lead
+          handleNext();
+        }
       }
     }
   };
@@ -228,50 +278,143 @@ const LeadsContainer = ({ leads = [] }) => {
 
       {/* Sensitivity Control Panel */}
       {showSensitivityControl && (
-        <div className="mb-4 p-4 bg-[#111111] border border-[#1C1C1E] rounded-lg">
+        <div className="mb-4 p-4 bg-[#111111] border border-[#1C1C1E] rounded-lg space-y-4">
+          {/* Single Swipe Mode Toggle */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-[#E5E5E7]">Swipe Sensitivity:</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-[#8E8E93]">Low</span>
-                <input
-                  type="range"
-                  min="50"
-                  max="300"
-                  value={swipeSensitivity}
-                  onChange={(e) => setSwipeSensitivity(parseInt(e.target.value))}
-                  className="w-32 h-2 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #007AFF 0%, #007AFF ${((swipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((swipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
-                  }}
-                />
-                <span className="text-xs text-[#8E8E93]">High</span>
-              </div>
-              {isEditingSensitivity ? (
-                <div className="flex items-center space-x-1">
-                  <input
-                    type="number"
-                    min="50"
-                    max="300"
-                    value={editSensitivityValue}
-                    onChange={(e) => setEditSensitivityValue(e.target.value)}
-                    onKeyPress={handleSensitivityKeyPress}
-                    onBlur={handleSensitivityBlur}
-                    autoFocus
-                    className="w-16 px-2 py-1 text-xs bg-[#1C1C1E] border border-[#007AFF] rounded text-[#FFFFFF] focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
-                  />
-                  <span className="text-xs text-[#8E8E93]">px</span>
+            <div>
+              <span className="text-sm text-[#E5E5E7]">Single Swipe Mode</span>
+              <div className="text-xs text-[#8E8E93]">Any swipe gesture triggers navigation (ignores distance)</div>
+            </div>
+            <button
+              onClick={() => setSingleSwipeMode(!singleSwipeMode)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                singleSwipeMode ? 'bg-[#007AFF]' : 'bg-[#1C1C1E]'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  singleSwipeMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Separate Sensitivity Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-[#E5E5E7]">Separate Left/Right Sensitivity</span>
+              <div className="text-xs text-[#8E8E93]">Set different sensitivity for left and right swipes</div>
+            </div>
+            <button
+              onClick={() => setUseSeparateSensitivity(!useSeparateSensitivity)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                useSeparateSensitivity ? 'bg-[#007AFF]' : 'bg-[#1C1C1E]'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  useSeparateSensitivity ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Sensitivity Controls */}
+          {!singleSwipeMode && (
+            <div className="space-y-3">
+              {useSeparateSensitivity ? (
+                // Separate Left/Right Controls
+                <div className="space-y-3">
+                  {/* Left Swipe Sensitivity */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#E5E5E7]">Left Swipe Sensitivity:</span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min="50"
+                        max="300"
+                        value={leftSwipeSensitivity}
+                        onChange={(e) => setLeftSwipeSensitivity(parseInt(e.target.value))}
+                        className="w-24 h-2 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #FF3B30 0%, #FF3B30 ${((leftSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((leftSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
+                        }}
+                      />
+                      <span className="text-xs text-[#FF3B30] font-mono bg-[#1C1C1E] px-2 py-1 rounded">
+                        {leftSwipeSensitivity}px
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Right Swipe Sensitivity */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#E5E5E7]">Right Swipe Sensitivity:</span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min="50"
+                        max="300"
+                        value={rightSwipeSensitivity}
+                        onChange={(e) => setRightSwipeSensitivity(parseInt(e.target.value))}
+                        className="w-24 h-2 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #00D09C 0%, #00D09C ${((rightSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((rightSwipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
+                        }}
+                      />
+                      <span className="text-xs text-[#00D09C] font-mono bg-[#1C1C1E] px-2 py-1 rounded">
+                        {rightSwipeSensitivity}px
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <span 
-                  className="text-xs text-[#007AFF] font-mono bg-[#1C1C1E] px-2 py-1 rounded cursor-pointer hover:bg-[#2D2D2F] transition-colors"
-                  onClick={handleSensitivityClick}
-                  title="Click to edit"
-                >
-                  {swipeSensitivity}px
-                </span>
+                // Unified Sensitivity Control
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#E5E5E7]">Swipe Sensitivity:</span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="range"
+                      min="50"
+                      max="300"
+                      value={swipeSensitivity}
+                      onChange={(e) => setSwipeSensitivity(parseInt(e.target.value))}
+                      className="w-32 h-2 bg-[#1C1C1E] rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #007AFF 0%, #007AFF ${((swipeSensitivity - 50) / 250) * 100}%, #1C1C1E ${((swipeSensitivity - 50) / 250) * 100}%, #1C1C1E 100%)`
+                      }}
+                    />
+                    {isEditingSensitivity ? (
+                      <div className="flex items-center space-x-1">
+                        <input
+                          type="number"
+                          min="50"
+                          max="300"
+                          value={editSensitivityValue}
+                          onChange={(e) => setEditSensitivityValue(e.target.value)}
+                          onKeyPress={handleSensitivityKeyPress}
+                          onBlur={handleSensitivityBlur}
+                          autoFocus
+                          className="w-16 px-2 py-1 text-xs bg-[#1C1C1E] border border-[#007AFF] rounded text-[#FFFFFF] focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
+                        />
+                        <span className="text-xs text-[#8E8E93]">px</span>
+                      </div>
+                    ) : (
+                      <span 
+                        className="text-xs text-[#007AFF] font-mono bg-[#1C1C1E] px-2 py-1 rounded cursor-pointer hover:bg-[#2D2D2F] transition-colors"
+                        onClick={handleSensitivityClick}
+                        title="Click to edit"
+                      >
+                        {swipeSensitivity}px
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
+          )}
+
+          {/* Close Button */}
+          <div className="flex justify-end">
             <button
               onClick={() => setShowSensitivityControl(false)}
               className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] transition-colors"
@@ -281,9 +424,6 @@ const LeadsContainer = ({ leads = [] }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </div>
-          <div className="mt-2 text-xs text-[#8E8E93]">
-            Adjust how far you need to swipe to navigate between leads. Higher values require longer swipes.
           </div>
         </div>
       )}
