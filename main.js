@@ -455,6 +455,17 @@ function createMainAndWidgetWindows() {
     if (!app.isQuiting) {
       event.preventDefault();
       logger.info('Main window closed, hiding instead of quitting');
+      
+      // Close widget window when main window is closed
+      if (widgetWindow && !widgetWindow.isDestroyed()) {
+        try {
+          logger.info('Closing widget window due to main window close');
+          widgetWindow.close();
+        } catch (error) {
+          logger.error('Error closing widget window when main window closed:', error);
+        }
+      }
+      
       mainWindow.hide();
     }
   });
@@ -674,30 +685,53 @@ ipcMain.handle('open-external', async (event, url) => {
 });
 
 ipcMain.handle('window:quit', () => {
+  logger.info('IPC window:quit called - forcing application exit');
+  
   // Set quitting flag to prevent window close event from hiding the window
   app.isQuiting = true;
   
   // Clean up widget window first
-  if (widgetWindow && !widgetWindow.isDestroyed()) {
+  if (widgetWindow) {
     try {
-      widgetWindow.close();
+      if (!widgetWindow.isDestroyed()) {
+        logger.info('Destroying widget window from IPC quit');
+        widgetWindow.window.destroy(); // Use destroy for immediate cleanup
+      }
       widgetWindow = null;
     } catch (error) {
-      console.error('Error closing widget window during quit:', error);
+      logger.error('Error destroying widget window during IPC quit:', error);
+    }
+  }
+  
+  // Close main window
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      mainWindow.destroy();
+    } catch (error) {
+      logger.error('Error destroying main window during IPC quit:', error);
     }
   }
   
   // Clean up tray
   if (tray) {
-    tray.destroy();
-    tray = null;
+    try {
+      tray.destroy();
+      tray = null;
+    } catch (error) {
+      logger.error('Error destroying tray during IPC quit:', error);
+    }
   }
   
   // Unregister all shortcuts
-  globalShortcut.unregisterAll();
+  try {
+    globalShortcut.unregisterAll();
+  } catch (error) {
+    logger.error('Error unregistering shortcuts during IPC quit:', error);
+  }
   
-  // Quit the app
-  app.quit();
+  // Force exit the app
+  logger.info('Forcing application exit from IPC');
+  app.exit(0);
 });
 
 ipcMain.handle('window:minimize', () => {
@@ -1238,30 +1272,53 @@ function createTray() {
     {
       label: 'Quit',
       click: () => {
+        logger.info('Tray quit button clicked - forcing application exit');
+        
         // Set quitting flag to prevent window close event from hiding the window
         app.isQuiting = true;
         
-        // Clean up widget window first
-        if (widgetWindow && !widgetWindow.isDestroyed()) {
+        // Forcefully close widget window first
+        if (widgetWindow) {
           try {
-            widgetWindow.close();
+            if (!widgetWindow.isDestroyed()) {
+              logger.info('Forcefully closing widget window from tray quit');
+              widgetWindow.window.destroy(); // Use destroy instead of close for immediate cleanup
+            }
             widgetWindow = null;
           } catch (error) {
-            console.error('Error closing widget window during quit:', error);
+            logger.error('Error destroying widget window during tray quit:', error);
+          }
+        }
+        
+        // Close main window
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            mainWindow.destroy();
+          } catch (error) {
+            logger.error('Error destroying main window during tray quit:', error);
           }
         }
         
         // Clean up tray
         if (tray) {
-          tray.destroy();
-          tray = null;
+          try {
+            tray.destroy();
+            tray = null;
+          } catch (error) {
+            logger.error('Error destroying tray during quit:', error);
+          }
         }
         
         // Unregister all shortcuts
-        globalShortcut.unregisterAll();
+        try {
+          globalShortcut.unregisterAll();
+        } catch (error) {
+          logger.error('Error unregistering shortcuts during quit:', error);
+        }
         
-        // Quit the app
-        app.quit();
+        // Force exit the application
+        logger.info('Forcing application exit');
+        app.exit(0);
       }
     }
   ]);
@@ -2499,35 +2556,62 @@ app.whenReady().then(async () => {
 });
 
 app.on('will-quit' , async (event) => {
-  event.preventDefault();
-  logger.info("Application quitting, cleaning up resources");
+  // Don't prevent quit if we're already in quitting state
+  if (!app.isQuiting) {
+    event.preventDefault();
+    logger.info("Application quitting, cleaning up resources");
 
-  // Set quitting flag
-  app.isQuiting = true;
+    // Set quitting flag
+    app.isQuiting = true;
 
-  // Clean up tray
-  if (tray) {
-    logger.debug('Destroying tray');
-    tray.destroy();
-    tray = null;
-  }
-
-  // setupWindow removed; no cleanup required
-
-  // Clean up widget window
-  if (widgetWindow && !widgetWindow.isDestroyed()) {
-    try {
-      logger.debug('Closing widget window during quit');
-      widgetWindow.close();
-      widgetWindow = null;
-    } catch (error) {
-      logger.error('Error closing widget window during quit', error);
+    // Clean up widget window first
+    if (widgetWindow) {
+      try {
+        if (!widgetWindow.isDestroyed()) {
+          logger.debug('Destroying widget window during quit');
+          widgetWindow.window.destroy(); // Use destroy for immediate cleanup
+        }
+        widgetWindow = null;
+      } catch (error) {
+        logger.error('Error destroying widget window during quit', error);
+      }
     }
-  }
 
-  logger.debug('Unregistering all global shortcuts');
-  globalShortcut.unregisterAll();
-  app.exit(0);
+    // Clean up main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.destroy();
+      } catch (error) {
+        logger.error('Error destroying main window during quit', error);
+      }
+    }
+
+    // Clean up tray
+    if (tray) {
+      try {
+        logger.debug('Destroying tray');
+        tray.destroy();
+        tray = null;
+      } catch (error) {
+        logger.error('Error destroying tray during quit', error);
+      }
+    }
+
+    // setupWindow removed; no cleanup required
+
+    logger.debug('Unregistering all global shortcuts');
+    try {
+      globalShortcut.unregisterAll();
+    } catch (error) {
+      logger.error('Error unregistering shortcuts during quit', error);
+    }
+    
+    // Force exit after cleanup
+    setTimeout(() => {
+      logger.info('Forcing application exit after cleanup');
+      app.exit(0);
+    }, 100);
+  }
 });
 
 
