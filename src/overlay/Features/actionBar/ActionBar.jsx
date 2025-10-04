@@ -94,6 +94,14 @@ const ActionBar = () => {
     };
   }, [dispatch]);
 
+  // Set first bucket as default when buckets are loaded
+  useEffect(() => {
+    if (buckets && buckets.length > 0 && selectedOption === 'Select Option') {
+      setSelectedOption(buckets[0].name);
+      console.log('ActionBar: Set default selection to:', buckets[0].name);
+    }
+  }, [buckets, selectedOption]);
+
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsDropdownOpen(false);
@@ -102,6 +110,12 @@ const ActionBar = () => {
     // Capture screenshot and save locally
   const handleActionButton = async () => {
     console.log(`Action button clicked with option: ${selectedOption}`);
+    
+    // Check if a valid option is selected
+    if (!selectedOption || selectedOption === 'Select Option') {
+      console.log('No valid option selected, cannot take screenshot');
+      return;
+    }
     
     // Set status to processing (red)
     setScreenshotStatus('processing');
@@ -332,29 +346,29 @@ const ActionBar = () => {
 
             <button
               onClick={handleActionButton}
-              disabled={screenshotStatus === 'processing'}
+              disabled={screenshotStatus === 'processing' || !selectedOption || selectedOption === 'Select Option'}
               style={{
-                background: screenshotStatus === 'processing' ? '#6B7280' : themeColors.primaryBlue,
+                background: (screenshotStatus === 'processing' || !selectedOption || selectedOption === 'Select Option') ? '#6B7280' : themeColors.primaryBlue,
                 border: 'none',
                 borderRadius: '6px',
                 padding: '8px 16px',
                 color: themeColors.primaryText,
                 fontSize: '12px',
                 fontWeight: '600',
-                cursor: screenshotStatus === 'processing' ? 'not-allowed' : 'pointer',
+                cursor: (screenshotStatus === 'processing' || !selectedOption || selectedOption === 'Select Option') ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
-                opacity: screenshotStatus === 'processing' ? 0.7 : 1
+                opacity: (screenshotStatus === 'processing' || !selectedOption || selectedOption === 'Select Option') ? 0.7 : 1
               }}
               onMouseEnter={(e) => {
-                if (screenshotStatus !== 'processing') {
+                if (screenshotStatus !== 'processing' && selectedOption && selectedOption !== 'Select Option') {
                   e.target.style.background = '#0056CC';
                   e.target.style.transform = 'scale(1.05)';
                   e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.4)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (screenshotStatus !== 'processing') {
+                if (screenshotStatus !== 'processing' && selectedOption && selectedOption !== 'Select Option') {
                   e.target.style.background = themeColors.primaryBlue;
                   e.target.style.transform = 'scale(1)';
                   e.target.style.boxShadow = 'none';
