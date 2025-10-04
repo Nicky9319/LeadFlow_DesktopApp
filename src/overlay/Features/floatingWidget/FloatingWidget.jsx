@@ -196,8 +196,8 @@ const FloatingWidget = () => {
         position: 'absolute',
         left: position.x || 1200,
         top: position.y || 20,
-        width: '50px',
-        height: '50px',
+        width: '60px',
+        height: '60px',
         pointerEvents: 'auto',
         cursor: isDragging ? 'grabbing' : 'pointer',
         zIndex: 2147483647 // Maximum possible z-index
@@ -216,123 +216,254 @@ const FloatingWidget = () => {
             justifyContent: 'center'
           }}
         >
-          {/* Black outer cover wrapped in HoverComponent */}
           <HoverComponent onClick={handleWidgetClick}>
             <div
               style={{
-                width: '40px',
-                height: '40px',
-                backgroundColor: screenshotAnimation === 'processing' ? '#EF4444' + '30' : 
-                               screenshotAnimation === 'success' ? '#10B981' + '30' : 
-                               isClicked ? themeColors.primaryBlue + '20' : themeColors.primaryBackground,
+                width: '48px',
+                height: '48px',
+                backgroundColor: themeColors.primaryBackground,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: screenshotAnimation === 'processing' 
-                  ? '0 4px 20px rgba(239, 68, 68, 0.6), 0 0 40px rgba(239, 68, 68, 0.4)' 
+                  ? '0 4px 24px rgba(59, 130, 246, 0.35), 0 8px 48px rgba(99, 102, 241, 0.2)' 
                   : screenshotAnimation === 'success' 
-                    ? '0 4px 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.4)' 
+                    ? '0 4px 20px rgba(16, 185, 129, 0.5), 0 8px 40px rgba(16, 185, 129, 0.25)' 
                     : isClicked 
                       ? '0 2px 8px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.4)' 
                       : isHovered 
-                        ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.3)' 
-                        : '0 2px 10px rgba(0, 0, 0, 0.3)',
-                border: `1px solid ${screenshotAnimation === 'processing' ? 'rgba(239, 68, 68, 0.7)' : 
-                                    screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.7)' : 
-                                    isClicked ? 'rgba(59, 130, 246, 0.7)' : 
-                                    isHovered ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
-                outline: `1px solid ${screenshotAnimation === 'processing' ? 'rgba(239, 68, 68, 0.5)' : 
-                                     screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.5)' : 
-                                     isClicked ? 'rgba(59, 130, 246, 0.5)' : 
-                                     isHovered ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                outlineOffset: '1px',
+                        ? '0 6px 24px rgba(0, 0, 0, 0.6), 0 0 32px rgba(59, 130, 246, 0.35)' 
+                        : '0 4px 16px rgba(0, 0, 0, 0.4)',
+                border: `1.5px solid ${
+                  screenshotAnimation === 'processing' ? 'rgba(99, 102, 241, 0.45)' : 
+                  screenshotAnimation === 'success' ? 'rgba(16, 185, 129, 0.6)' : 
+                  isClicked ? 'rgba(59, 130, 246, 0.7)' : 
+                  isHovered ? 'rgba(59, 130, 246, 0.6)' : 'rgba(255, 255, 255, 0.2)'
+                }`,
                 cursor: 'pointer',
                 position: 'relative',
-                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: screenshotAnimation === 'processing' ? 'scale(1.2)' : 
-                          screenshotAnimation === 'success' ? 'scale(1.15)' : 
-                          isClicked ? 'scale(0.9)' : 
-                          isHovered ? 'scale(1.1)' : 'scale(1)',
+                transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                transform: screenshotAnimation === 'processing' ? 'scale(1.08)' : 
+                          screenshotAnimation === 'success' ? 'scale(1.05)' : 
+                          isClicked ? 'scale(0.92)' : 
+                          isHovered ? 'scale(1.12)' : 'scale(1)',
                 pointerEvents: 'auto',
-                animation: screenshotAnimation === 'processing' ? 'pulse 0.8s ease-in-out infinite' : 
-                          screenshotAnimation === 'success' ? 'bounce 0.6s ease-in-out' : 'none'
+                overflow: 'visible'
               }}
             >
-              {/* Blue inner circle */}
+              {/* Outer pulse rings - visible during processing */}
+              {screenshotAnimation === 'processing' && (
+                <>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(59, 130, 246, 0.5)',
+                    transform: 'translate(-50%, -50%)',
+                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    pointerEvents: 'none'
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(99, 102, 241, 0.45)',
+                    transform: 'translate(-50%, -50%)',
+                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.5s',
+                    pointerEvents: 'none'
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(139, 92, 246, 0.4)',
+                    transform: 'translate(-50%, -50%)',
+                    animation: 'siriWaveRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1s',
+                    pointerEvents: 'none'
+                  }} />
+                </>
+              )}
+
+              {/* Success confirmation ring */}
+              {screenshotAnimation === 'success' && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  border: '3px solid rgba(16, 185, 129, 0.8)',
+                  transform: 'translate(-50%, -50%)',
+                  animation: 'successPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  pointerEvents: 'none'
+                }} />
+              )}
+
+              {/* Core orb with gradient */}
               <div
                 style={{
-                  width: '16px',
-                  height: '16px',
-                  backgroundColor: screenshotAnimation === 'processing' ? '#EF4444' : 
-                                 screenshotAnimation === 'success' ? '#10B981' : 
-                                 themeColors.primaryBlue,
-                  borderRadius: '50%',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: screenshotAnimation === 'processing'
-                    ? '0 0 35px #EF4444CC, 0 0 60px #EF444499, 0 0 85px #EF444466'
+                  width: '24px',
+                  height: '24px',
+                  background: screenshotAnimation === 'processing'
+                    ? 'linear-gradient(135deg, #3B82F6 0%, #6366F1 25%, #8B5CF6 50%, #6366F1 75%, #3B82F6 100%)'
                     : screenshotAnimation === 'success'
-                      ? '0 0 35px #10B981CC, 0 0 60px #10B98199, 0 0 85px #10B98166'
-                      : isClicked
-                        ? `0 0 35px ${themeColors.primaryBlue}CC, 0 0 60px ${themeColors.primaryBlue}99, 0 0 85px ${themeColors.primaryBlue}66`
-                        : isHovered 
-                          ? `0 0 25px ${themeColors.primaryBlue}99, 0 0 50px ${themeColors.primaryBlue}66, 0 0 75px ${themeColors.primaryBlue}33`
-                          : `0 0 15px ${themeColors.primaryBlue}66, 0 0 30px ${themeColors.primaryBlue}33, 0 0 45px ${themeColors.primaryBlue}1A`,
-                  filter: 'blur(1px)',
-                  pointerEvents: 'none',
+                      ? 'linear-gradient(135deg, #10B981, #34D399)'
+                      : themeColors.primaryBlue,
+                  backgroundSize: screenshotAnimation === 'processing' ? '300% 300%' : '100% 100%',
+                  borderRadius: '50%',
                   position: 'relative',
-                  animation: screenshotAnimation === 'processing' ? 'pulse 0.5s ease-in-out infinite' : 
-                            screenshotAnimation === 'success' ? 'heartbeatColor 0.8s ease-in-out 3' : 
-                            'heartbeatColor 2s ease-in-out infinite'
+                  transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  filter: screenshotAnimation === 'processing' ? 'blur(1px)' : 
+                         screenshotAnimation === 'success' ? 'blur(0.5px)' : 'blur(1px)',
+                  boxShadow: screenshotAnimation === 'processing'
+                    ? '0 0 24px rgba(59, 130, 246, 0.7), 0 0 48px rgba(99, 102, 241, 0.5), 0 0 72px rgba(139, 92, 246, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.3)'
+                    : screenshotAnimation === 'success'
+                      ? '0 0 20px rgba(16, 185, 129, 0.9), 0 0 40px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.4)'
+                      : isClicked
+                        ? `0 0 32px ${themeColors.primaryBlue}DD, 0 0 64px ${themeColors.primaryBlue}99, inset 0 0 8px rgba(255, 255, 255, 0.25)`
+                        : isHovered 
+                          ? `0 0 28px ${themeColors.primaryBlue}BB, 0 0 56px ${themeColors.primaryBlue}77, inset 0 0 8px rgba(255, 255, 255, 0.2)`
+                          : `0 0 16px ${themeColors.primaryBlue}88, 0 0 32px ${themeColors.primaryBlue}44, inset 0 0 6px rgba(255, 255, 255, 0.15)`,
+                  animation: screenshotAnimation === 'processing' 
+                    ? 'siriOrbPulse 1.2s ease-in-out infinite, siriFlowingGradient 4s ease-in-out infinite' 
+                    : screenshotAnimation === 'success'
+                      ? 'successBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                      : 'heartbeatColor 2s ease-in-out infinite',
+                  pointerEvents: 'none',
+                  zIndex: 2
                 }}
               >
-                {/* Additional glow layer for enhanced heartbeat effect */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    left: '-2px',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    background: screenshotAnimation === 'processing' 
-                      ? 'radial-gradient(circle, #EF444420 0%, #EF444408 70%, transparent 100%)'
-                      : `radial-gradient(circle, ${themeColors.primaryBlue}25 0%, ${themeColors.primaryBlue}08 70%, transparent 100%)`,
-                    filter: 'blur(2px)',
-                    animation: screenshotAnimation === 'processing' ? 'pulse 0.8s ease-in-out infinite' : 
-                              'heartbeat 2s ease-in-out infinite',
-                    animationDelay: screenshotAnimation === 'processing' ? '0s' : '0.5s',
-                    pointerEvents: 'none',
-                    zIndex: 0
-                  }}
-                />
+                {/* Inner shimmer layer */}
+                <div style={{
+                  position: 'absolute',
+                  top: '2px',
+                  left: '2px',
+                  right: '2px',
+                  bottom: '2px',
+                  borderRadius: '50%',
+                  background: screenshotAnimation === 'processing'
+                    ? 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35), transparent 60%)'
+                    : screenshotAnimation === 'success'
+                      ? 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent 60%)'
+                      : 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), transparent 60%)',
+                  animation: screenshotAnimation === 'processing' ? 'shimmerMove 2.5s ease-in-out infinite' : 'none',
+                  pointerEvents: 'none'
+                }} />
               </div>
+
+              {/* Ambient glow layer */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: '32px',
+                  height: '32px',
+                  transform: 'translate(-50%, -50%)',
+                  borderRadius: '50%',
+                  background: screenshotAnimation === 'processing'
+                    ? 'radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 35%, rgba(139, 92, 246, 0.08) 65%, transparent 100%)'
+                    : screenshotAnimation === 'success'
+                      ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.15) 50%, transparent 100%)'
+                      : `radial-gradient(circle, ${themeColors.primaryBlue}30 0%, ${themeColors.primaryBlue}15 50%, transparent 100%)`,
+                  filter: 'blur(8px)',
+                  animation: screenshotAnimation === 'processing' 
+                    ? 'ambientPulse 1.8s ease-in-out infinite'
+                    : screenshotAnimation === 'success'
+                      ? 'successGlow 0.6s ease-out'
+                      : 'heartbeat 2s ease-in-out infinite',
+                  animationDelay: '0.5s',
+                  pointerEvents: 'none',
+                  zIndex: 1
+                }}
+              />
             </div>
           </HoverComponent>
         </div>
       </div>
 
-      {/* Hover text only visible when hovering over the widget */}
-      {isHovered && (
+      {/* Hover text with improved styling */}
+      {isHovered && !screenshotAnimation && (
         <div style={{
           position: 'absolute',
           left: position.x || 1200,
-          top: (position.y || 20) + 60,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          top: (position.y || 20) + 70,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)',
           color: 'white',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontWeight: 'bold',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: '600',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
-          zIndex: 2147483646, // Just below the widget
-          animation: 'fadeIn 0.2s ease-in-out'
+          zIndex: 2147483646,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+          animation: 'tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
           LeadFlow Widget
-          <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
+          <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '3px', fontWeight: '400' }}>
             Ctrl+Shift+Space
           </div>
+        </div>
+      )}
+
+      {/* Status indicator text */}
+      {screenshotAnimation === 'processing' && (
+        <div style={{
+          position: 'absolute',
+          left: position.x || 1200,
+          top: (position.y || 20) + 70,
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          backdropFilter: 'blur(12px)',
+          color: '#3B82F6',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          fontWeight: '600',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 2147483646,
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)',
+          animation: 'tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        }}>
+          Processing...
+        </div>
+      )}
+
+      {screenshotAnimation === 'success' && (
+        <div style={{
+          position: 'absolute',
+          left: position.x || 1200,
+          top: (position.y || 20) + 70,
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          backdropFilter: 'blur(12px)',
+          color: '#10B981',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          fontWeight: '600',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 2147483646,
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)',
+          animation: 'tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        }}>
+          ✓ Captured!
         </div>
       )}
     </>
