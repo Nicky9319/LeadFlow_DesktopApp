@@ -41,6 +41,8 @@ if (process.contextIsolated) {
 
       // Screenshot functionality
       captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
+      // Open external URLs
+      openExternal: (url) => ipcRenderer.invoke('open-external', url),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {

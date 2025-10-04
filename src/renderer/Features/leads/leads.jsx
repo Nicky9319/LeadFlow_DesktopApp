@@ -1,71 +1,132 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LeadsContainer from './components/LeadsContainer';
 
 const Leads = () => {
-  // Sample leads data - replace with actual data from your store/API
-  const [leads, setLeads] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      company: 'Tech Solutions Inc.',
-      email: 'john.smith@techsolutions.com',
-      phone: '+1 (555) 123-4567',
-      location: 'San Francisco, CA',
-      status: 'Hot',
-      value: 50000,
-      notes: 'Interested in our premium package. Follow up next week.',
-      tags: ['Enterprise', 'High Value', 'Decision Maker']
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      company: 'Marketing Pro',
-      email: 'sarah@marketingpro.com',
-      phone: '+1 (555) 987-6543',
-      location: 'New York, NY',
-      status: 'Warm',
-      value: 25000,
-      notes: 'Looking for a solution to streamline their marketing processes.',
-      tags: ['SMB', 'Marketing', 'Quick Decision']
-    },
-    {
-      id: 3,
-      name: 'Mike Chen',
-      company: 'StartupXYZ',
-      email: 'mike@startupxyz.com',
-      phone: '+1 (555) 456-7890',
-      location: 'Austin, TX',
-      status: 'Cold',
-      value: 15000,
-      notes: 'Early stage startup, budget conscious but very interested.',
-      tags: ['Startup', 'Budget Conscious', 'Tech Savvy']
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      company: 'Global Corp',
-      email: 'emily.davis@globalcorp.com',
-      phone: '+1 (555) 321-0987',
-      location: 'Chicago, IL',
-      status: 'Hot',
-      value: 75000,
-      notes: 'Large enterprise client, multiple decision makers involved.',
-      tags: ['Enterprise', 'High Value', 'Complex Sale']
-    },
-    {
-      id: 5,
-      name: 'David Wilson',
-      company: 'Local Business',
-      email: 'david@localbusiness.com',
-      phone: '+1 (555) 654-3210',
-      location: 'Miami, FL',
-      status: 'Warm',
-      value: 10000,
-      notes: 'Small business owner looking to modernize their operations.',
-      tags: ['SMB', 'Local', 'Traditional Business']
-    }
-  ]);
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Mock API function to simulate fetching leads
+  const fetchLeads = async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Mock data based on the API structure provided
+    return {
+      leads: [
+        {
+          leadId: "9ccae302-b638-4283-9714-d305c56a1280",
+          url: "https://linkedin.com/in/johnsmith",
+          username: "johnsmith",
+          platform: "linkedin",
+          status: "new",
+          notes: "Tech executive interested in our solutions"
+        },
+        {
+          leadId: "dc9b72bd-1f19-44e3-a978-fa7963c08156",
+          url: "https://instagram.com/sarahjohnson_marketing",
+          username: "sarahjohnson_marketing",
+          platform: "insta",
+          status: "contacted",
+          notes: "Marketing influencer with 50k followers, responded positively to DM"
+        },
+        {
+          leadId: "96eba49d-94c0-48c8-b60f-c9263330bb94",
+          url: "https://reddit.com/u/mikechen_startup",
+          username: "mikechen_startup",
+          platform: "reddit",
+          status: "qualified",
+          notes: "Active in r/entrepreneur, shared interest in our product after discussion"
+        },
+        {
+          leadId: "db6b9f6d-9837-4de4-9cfd-62b592e90721",
+          url: "https://behance.net/emilydavis",
+          username: "emilydavis",
+          platform: "behance",
+          status: "new",
+          notes: "Creative director with impressive portfolio, potential design client"
+        },
+        {
+          leadId: "3ae40387-6ca5-4bca-9001-629ae045043c",
+          url: "https://pinterest.com/davidwilson_diy",
+          username: "davidwilson_diy",
+          platform: "pinterest",
+          status: "contacted",
+          notes: "DIY content creator, interested in our tools for small business"
+        },
+        {
+          leadId: "7f8e9d1c-4b5a-6c7d-8e9f-0a1b2c3d4e5f",
+          url: "https://x.com/alexreynolds",
+          username: "alexreynolds",
+          platform: "x",
+          status: "qualified",
+          notes: "Tech journalist with 25k followers, interested in featuring our product"
+        },
+        {
+          leadId: "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+          url: "mailto:jessica.martinez@techstartup.com",
+          username: "jessica.martinez",
+          platform: "email",
+          status: "new",
+          notes: "CEO of promising fintech startup, found us through cold outreach"
+        }
+      ]
+    };
+  };
+
+  // Function to update lead notes
+  const updateLeadNotes = (leadId, newNotes) => {
+    setLeads(prevLeads => 
+      prevLeads.map(lead => 
+        lead.leadId === leadId 
+          ? { ...lead, notes: newNotes }
+          : lead
+      )
+    );
+  };
+
+  // Function to update lead status
+  const updateLeadStatus = (leadId, newStatus) => {
+    setLeads(prevLeads => 
+      prevLeads.map(lead => 
+        lead.leadId === leadId 
+          ? { ...lead, status: newStatus }
+          : lead
+      )
+    );
+  };
+
+  // Fetch leads on component mount
+  useEffect(() => {
+    const loadLeads = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchLeads();
+        setLeads(response.leads);
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLeads();
+  }, []);
+
+
+  if (loading) {
+    return (
+      <div className="leads-page p-6 bg-[#000000] min-h-screen">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-[#8E8E93]">Loading leads...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="leads-page p-6 bg-[#000000] min-h-screen">
@@ -77,7 +138,7 @@ const Leads = () => {
           </p>
         </div>
         
-        <LeadsContainer leads={leads} />
+        <LeadsContainer leads={leads} updateLeadNotes={updateLeadNotes} updateLeadStatus={updateLeadStatus} />
       </div>
     </div>
   );

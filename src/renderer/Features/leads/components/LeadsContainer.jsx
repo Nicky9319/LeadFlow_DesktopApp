@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LeadCard from './LeadCard';
 
-const LeadsContainer = ({ leads = [] }) => {
+const LeadsContainer = ({ leads = [], updateLeadNotes, updateLeadStatus }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isEditingCounter, setIsEditingCounter] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -566,6 +566,8 @@ const LeadsContainer = ({ leads = [] }) => {
         <LeadCard 
           lead={leads[currentIndex]} 
           isActive={true}
+          updateLeadNotes={updateLeadNotes}
+          updateLeadStatus={updateLeadStatus}
         />
       </div>
 

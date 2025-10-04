@@ -576,6 +576,17 @@ ipcMain.handle('window:close', () => {
   }
 });
 
+// Open external URLs
+ipcMain.handle('open-external', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed to open external URL:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('window:quit', () => {
   // Set quitting flag to prevent window close event from hiding the window
   app.isQuiting = true;
