@@ -36,6 +36,14 @@ export default {
       },
       maxWidth: {
         '4/5': '80%',
+      },
+      spacing: {
+        '4.5': '1.125rem',  // 18px for padding
+        '7.5': '1.875rem',  // 30px for button dimensions
+        '15': '3.75rem',    // 60px for loading/empty state padding
+      },
+      borderWidth: {
+        '3': '3px',
       }
     },
   },
