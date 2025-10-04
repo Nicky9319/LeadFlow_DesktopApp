@@ -8,6 +8,7 @@ import { getAllBuckets, addNewBucket, updateBucketName, deleteBucket as deleteBu
 const Buckets = () => {
     const dispatch = useDispatch();
     const { buckets, loading } = useSelector((state) => state.buckets);
+    const bucketsArray = Array.isArray(buckets) ? buckets : [];
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,15 +49,22 @@ const Buckets = () => {
     const handleCreateBucket = async (bucketName) => {
         try {
             const response = await addNewBucket(bucketName);
-            if (response.status_code === 200) {
-                const newBucket = {
-                    id: response.content.bucketId,
-                    name: response.content.bucketName
-                };
+            // treat any 2xx as success
+            if (response && response.status_code >= 200 && response.status_code < 300) {
+                // Normalize response content which may be nested or use different field names
+                let content = response.content || {};
+                if (content.content && typeof content.content === 'object') content = content.content;
+
+                // service now returns a normalized content when possible
+                const id = content.id || content.bucketId || content._id || `bucket-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+                const name = content.name || content.bucketName || bucketName;
+
+                const newBucket = { id: String(id), name, ...content };
+
                 dispatch(addBucket(newBucket));
-                console.log('Bucket created successfully:', response.content);
+                console.log('Bucket created successfully:', newBucket, 'raw response:', response);
             } else {
-                console.error('Failed to create bucket:', response);
+                console.error('Failed to create bucket: ', response);
             }
         } catch (error) {
             console.error('Error creating bucket:', error);
@@ -144,19 +152,19 @@ const Buckets = () => {
                         ? 'grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5' 
                         : 'flex flex-col gap-3'
                 }`}>
-                    {buckets.map((bucket) => (
-                        <BucketCard
-                            key={bucket.id}
-                            bucket={bucket}
-                            onUpdateBucket={handleUpdateBucket}
-                            onDeleteBucket={handleDeleteBucket}
-                            viewMode={viewMode}
-                        />
-                    ))}
+                        {bucketsArray.map((bucket, index) => (
+                            <BucketCard
+                                key={bucket && bucket.id ? bucket.id : `bucket-${index}`}
+                                bucket={bucket}
+                                onUpdateBucket={handleUpdateBucket}
+                                onDeleteBucket={handleDeleteBucket}
+                                viewMode={viewMode}
+                            />
+                        ))}
                 </div>
             )}
             
-            {!loading && buckets.length === 0 && (
+                {!loading && bucketsArray.length === 0 && (
                 <div className="text-center py-15 text-gray-400">
                     <p className="text-base">No buckets yet. Create your first bucket to get started!</p>
                 </div>
