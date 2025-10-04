@@ -37,6 +37,7 @@ import { execSync } from 'child_process';
 let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
+let lastScreenshotTime = 0; // Cooldown tracking for global shortcut
 
 // Configure auto-updater logging
 autoUpdater.logger = log;
@@ -482,9 +483,71 @@ function createMainAndWidgetWindows() {
 
 // Screenshot capture and save handler
 const { nativeImage, desktopCapturer, screen } = require('electron');
-ipcMain.handle('capture-and-save-screenshot', async (event) => {
+
+// Global shortcut screenshot function with cooldown
+async function handleGlobalScreenshot() {
+  const now = Date.now();
+  const cooldownTime = 1000; // 1 second cooldown
+  
+  if (now - lastScreenshotTime < cooldownTime) {
+    console.log('Screenshot on cooldown, ignoring request');
+    return;
+  }
+  
+  lastScreenshotTime = now;
+  
   try {
-    console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
+    // Send processing notification to widget window if it exists
+    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+      try {
+        widgetWindow.webContents.send('eventFromMain', {
+          eventName: 'screenshot-processing',
+          payload: { status: 'processing', timestamp: now }
+        });
+      } catch (sendError) {
+        console.warn('Failed to send processing notification to widget:', sendError);
+      }
+    }
+    
+    const result = await captureScreenshot();
+    
+    // Send success notification to widget window if it exists
+    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+      try {
+        widgetWindow.webContents.send('eventFromMain', {
+          eventName: 'screenshot-taken',
+          payload: { success: true, timestamp: now }
+        });
+      } catch (sendError) {
+        console.warn('Failed to send success notification to widget:', sendError);
+      }
+    }
+    
+    console.log('Global shortcut screenshot captured successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Global shortcut screenshot failed:', error);
+    
+    // Send error notification to widget window if it exists
+    if (widgetWindow && !widgetWindow.isDestroyed() && widgetWindow.webContents) {
+      try {
+        widgetWindow.webContents.send('eventFromMain', {
+          eventName: 'screenshot-error',
+          payload: { success: false, error: error.message }
+        });
+      } catch (sendError) {
+        console.warn('Failed to send error notification to widget:', sendError);
+      }
+    }
+    
+    return null;
+  }
+}
+
+// Extracted screenshot capture logic for reuse
+async function captureScreenshot() {
+  try {
+    console.log('[Screenshot] captureScreenshot function called.');
     
     // Get the primary display dimensions
     const primaryDisplay = screen.getPrimaryDisplay();
@@ -522,6 +585,11 @@ ipcMain.handle('capture-and-save-screenshot', async (event) => {
     console.error('[Screenshot] Failed to capture or save screenshot:', err);
     return { success: false, error: err.message };
   }
+}
+
+ipcMain.handle('capture-and-save-screenshot', async (event) => {
+  console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
+  return await captureScreenshot();
 });
 
 ipcMain.handle('get-ip-address', async (event) => {
@@ -2375,6 +2443,14 @@ app.whenReady().then(async () => {
       logger.debug('Widget window does not exist, creating new one');
       createWidgetWindow();
     }
+  });
+
+  // Screenshot shortcut (Ctrl + 1)
+  globalShortcut.register('CommandOrControl+1', () => {
+    logger.debug('Screenshot shortcut Ctrl+1 pressed');
+    handleGlobalScreenshot().catch(error => {
+      logger.error('Global shortcut screenshot error:', error);
+    });
   });
 
   // Initialize DB - removed for now

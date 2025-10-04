@@ -1,5 +1,5 @@
 {
-  "name": "DonnaAI",
+  "name": "leadflow",
   "version": "1.0.0",
   "description": "An Electron application with React",
   "main": "./out/main/main.js",

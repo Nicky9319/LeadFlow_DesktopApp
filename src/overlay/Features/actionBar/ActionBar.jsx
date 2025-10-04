@@ -16,6 +16,7 @@ const ActionBar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [screenshotStatus, setScreenshotStatus] = useState('ready'); // 'ready', 'processing', 'success'
   const dropdownRef = useRef(null);
+  const [globalShortcutFeedback, setGlobalShortcutFeedback] = useState(false);
   
   const position = floatingWidgetPosition || { x: 1200, y: 20 };
   const isNearRightEdge = position.x > window.innerWidth - 300;
@@ -51,14 +52,32 @@ const ActionBar = () => {
         }
         const { eventName, payload } = data;
         console.log('ActionBar: Parsed eventName:', eventName, 'payload:', payload);
+        
         if (eventName === 'buckets-updated' && payload && Array.isArray(payload)) {
           console.log('ActionBar: Updating buckets with:', payload);
           dispatch(setBuckets(payload));
+        } else if (eventName === 'screenshot-processing' && payload) {
+          console.log('ActionBar: Global screenshot processing');
+          setScreenshotStatus('processing');
+          setGlobalShortcutFeedback(true);
+        } else if (eventName === 'screenshot-taken' && payload && payload.success) {
+          console.log('ActionBar: Global screenshot taken successfully');
+          setScreenshotStatus('success');
+          setGlobalShortcutFeedback(true);
+          // Show success feedback for 2.5 seconds, then reset (same as button click)
+          setTimeout(() => {
+            setScreenshotStatus('ready');
+            setGlobalShortcutFeedback(false);
+          }, 2500);
+        } else if (eventName === 'screenshot-error' && payload && !payload.success) {
+          console.log('ActionBar: Global screenshot failed:', payload.error);
+          setScreenshotStatus('ready');
+          setGlobalShortcutFeedback(false);
         } else {
           console.log('ActionBar: Ignoring event:', eventName);
         }
       } catch (err) {
-        console.error('Error applying buckets-updated payload:', err);
+        console.error('Error applying IPC event payload:', err);
       }
     };
     
@@ -179,7 +198,7 @@ const ActionBar = () => {
 
   return (
     <HoverComponent>
-      {/* Add CSS animation for pulsing effect */}
+      {/* Add CSS animation for pulsing effect and slide-in animation */}
       <style>
         {`
           @keyframes pulse {
@@ -190,8 +209,57 @@ const ActionBar = () => {
               opacity: 0.5;
             }
           }
+          @keyframes slideInOut {
+            0% {
+              transform: translateY(-20px);
+              opacity: 0;
+            }
+            10%, 90% {
+              transform: translateY(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(-20px);
+              opacity: 0;
+            }
+          }
+          .global-shortcut-feedback {
+            animation: slideInOut 2s ease-in-out;
+          }
         `}
       </style>
+      
+      {/* Global Shortcut Feedback Notification */}
+      {globalShortcutFeedback && (
+        <div
+          className="global-shortcut-feedback"
+          style={{
+            position: 'fixed',
+            left: safeLeft,
+            top: position.y - 40,
+            transform: 'translateX(0)',
+            zIndex: 10003,
+            background: 'linear-gradient(135deg, #10B981, #059669)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: '600',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none'
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="9"/>
+          </svg>
+          Screenshot taken (Ctrl+1)
+        </div>
+      )}
       <div style={{
         position: 'fixed',
         left: safeLeft,
@@ -380,6 +448,43 @@ const ActionBar = () => {
           </div>
         </div>
       </div>
+
+      {/* Global Shortcut Feedback Overlay */}
+      {globalShortcutFeedback && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: 'rgba(0, 0, 0, 0.9)',
+          color: '#ffffff',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          zIndex: 10000,
+          animation: 'slideInRight 0.3s ease-out',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          border: `2px solid ${screenshotStatus === 'processing' ? '#EF4444' : screenshotStatus === 'success' ? '#10B981' : '#6B7280'}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: screenshotStatus === 'processing' ? '#EF4444' : screenshotStatus === 'success' ? '#10B981' : '#6B7280',
+            animation: screenshotStatus === 'processing' ? 'pulse 1s infinite' : 'none',
+            boxShadow: screenshotStatus === 'processing' ? '0 0 8px rgba(239, 68, 68, 0.6)' : 
+                       screenshotStatus === 'success' ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none'
+          }} />
+          <span>
+            {screenshotStatus === 'processing' ? 'Taking Screenshot... (Ctrl+1)' : 
+             screenshotStatus === 'success' ? 'Screenshot Saved! (Ctrl+1)' : 
+             'Screenshot Ready (Ctrl+1)'}
+          </span>
+        </div>
+      )}
     </HoverComponent>
   );
 };
