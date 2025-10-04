@@ -3,11 +3,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
 import { setChatInterfaceVisible } from '../../store/slices/uiVisibilitySlice';
+import { setBuckets } from '../../store/slices/bucketsSlice';
+import { getAllBuckets } from '../../../services/bucketsServices';
 
 const ActionBar = () => {
   const dispatch = useDispatch();
   const chatInterfaceVisible = useSelector((state) => state.uiVisibility.chatInterfaceVisible);
   const floatingWidgetPosition = useSelector((state) => state.floatingWidget.position);
+  const buckets = useSelector((state) => state.buckets.buckets);
   
   const [selectedOption, setSelectedOption] = useState('Select Option');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -20,13 +23,19 @@ const ActionBar = () => {
     Math.max(10, position.x - barWidth - 20) :
     Math.min(window.innerWidth - barWidth - 10, position.x + 60);
 
-  const dropdownOptions = [
-    'Lead Management',
-    'Task Tracking',
-    'Analytics',
-    'Reports',
-    'Settings'
-  ];
+  const dropdownOptions = buckets.map(bucket => bucket.name);
+
+  useEffect(() => {
+    const loadBuckets = async () => {
+      try {
+        const fetchedBuckets = await getAllBuckets();
+        dispatch(setBuckets(fetchedBuckets));
+      } catch (error) {
+        console.error('Error loading buckets in ActionBar:', error);
+      }
+    };
+    loadBuckets();
+  }, [dispatch]);
 
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
@@ -159,32 +168,36 @@ const ActionBar = () => {
                 marginTop: '4px',
                 overflow: 'hidden'
               }}>
-                {dropdownOptions.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleOptionSelect(option)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '8px 12px',
-                      color: themeColors.primaryText,
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      transition: 'background 0.2s ease',
-                      borderBottom: index < dropdownOptions.length - 1 ? `1px solid ${themeColors.borderColor}` : 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = themeColors.hoverBackground;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'transparent';
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
+                {dropdownOptions.map((option, index) => {
+                  const bucket = buckets.find(b => b.name === option);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleOptionSelect(option)}
+                      title={bucket ? `Bucket ID: ${bucket.id}` : ''}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        padding: '8px 12px',
+                        color: themeColors.primaryText,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left',
+                        transition: 'background 0.2s ease',
+                        borderBottom: index < dropdownOptions.length - 1 ? `1px solid ${themeColors.borderColor}` : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = themeColors.hoverBackground;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                      }}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -1,0 +1,20 @@
+{
+    "buckets": [
+        {
+            "bucketId": "bucket-3",
+            "bucketName": "HighValue"
+        },
+        {
+            "bucketId": "a30a2267-9e94-44ba-bf6f-28b2a9343bf0",
+            "bucketName": "bucket-4"
+        },
+        {
+            "bucketId": "54885a48-0031-4f41-8670-d5ba11100887",
+            "bucketName": "Renamed Bucket"
+        },
+        {
+            "bucketId": "1f6a83a0-0c48-4f21-9f48-7cbc5a2f20af",
+            "bucketName": "new one"
+        }
+    ]
+}

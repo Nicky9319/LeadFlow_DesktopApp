@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const BucketCard = ({ bucket, onUpdateBucket, viewMode = 'grid' }) => {
+const BucketCard = ({ bucket, onUpdateBucket, onDeleteBucket, viewMode = 'grid' }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(bucket.name);
 
@@ -63,13 +63,22 @@ const BucketCard = ({ bucket, onUpdateBucket, viewMode = 'grid' }) => {
                         ) : (
                             <>
                                 <span className="flex-1 text-lg font-semibold text-white">{bucket.name}</span>
-                                <button 
-                                    className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-blue-500 hover:shadow-[0_0_8px_rgba(59,130,246,0.6)] hover:scale-110"
-                                    onClick={() => setIsEditing(true)}
-                                    title="Edit bucket name"
-                                >
-                                    ✎
-                                </button>
+                                <div className="flex gap-1.5 items-center">
+                                    <button 
+                                        className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-blue-500 hover:shadow-[0_0_8px_rgba(59,130,246,0.6)] hover:scale-110"
+                                        onClick={() => setIsEditing(true)}
+                                        title="Edit bucket name"
+                                    >
+                                        ✎
+                                    </button>
+                                    <button 
+                                        className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:scale-110"
+                                        onClick={() => onDeleteBucket(bucket.id)}
+                                        title="Delete bucket"
+                                    >
+                                        🗑
+                                    </button>
+                                </div>
                             </>
                         )}
                     </div>
@@ -118,13 +127,22 @@ const BucketCard = ({ bucket, onUpdateBucket, viewMode = 'grid' }) => {
                     ) : (
                         <>
                             <h3 className="text-xl font-semibold text-white flex-1 leading-tight">{bucket.name}</h3>
-                            <button 
-                                className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-blue-500 hover:shadow-[0_0_8px_rgba(59,130,246,0.6)] hover:scale-110"
-                                onClick={() => setIsEditing(true)}
-                                title="Edit bucket name"
-                            >
-                                ✎
-                            </button>
+                            <div className="flex gap-1.5 items-center">
+                                <button 
+                                    className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-blue-500 hover:shadow-[0_0_8px_rgba(59,130,246,0.6)] hover:scale-110"
+                                    onClick={() => setIsEditing(true)}
+                                    title="Edit bucket name"
+                                >
+                                    ✎
+                                </button>
+                                <button 
+                                    className="bg-transparent text-gray-400 text-base cursor-pointer transition-all duration-300 hover:text-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:scale-110"
+                                    onClick={() => onDeleteBucket(bucket.id)}
+                                    title="Delete bucket"
+                                >
+                                    🗑
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>

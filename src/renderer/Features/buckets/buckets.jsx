@@ -1,39 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import BucketCard from './components/BucketCard';
 import AddBucketModal from './components/AddBucketModal';
+import { setBuckets, setLoading, setError, updateBucket, addBucket, deleteBucket } from '../../../store/slices/bucketsSlice';
+import { getAllBuckets, addNewBucket, updateBucketName, deleteBucket as deleteBucketService } from '../../../services/bucketsServices';
 
 const Buckets = () => {
+    const dispatch = useDispatch();
+    const { buckets, loading } = useSelector((state) => state.buckets);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [buckets, setBuckets] = useState([]);
-    const [loading, setLoading] = useState(true);
 
-    // Mock function to fetch buckets - replace with actual API call
+    // Function to fetch buckets
     const fetchBuckets = async () => {
         try {
-            setLoading(true);
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Mock data with UUID-like IDs
-            const mockBuckets = [
-                { id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', name: 'Hot Leads' },
-                { id: 'f1e2d3c4-b5a6-9870-5432-109876fedcba', name: 'Warm Leads' },
-                { id: '12345678-9abc-def0-1234-56789abcdef0', name: 'Cold Leads' },
-                { id: '87654321-0fed-cba9-8765-43210fedcba9', name: 'Qualified' },
-                { id: 'abcdef12-3456-7890-abcd-ef1234567890', name: 'Follow Up' }
-            ];
-            
-            setBuckets(mockBuckets);
-            console.log('Fetched buckets:', mockBuckets);
-            // TODO: Replace with actual API call
-            // const response = await api.getBuckets();
-            // setBuckets(response.data);
+            dispatch(setLoading(true));
+            const fetchedBuckets = await getAllBuckets();
+            dispatch(setBuckets(fetchedBuckets));
+            console.log('Fetched buckets:', fetchedBuckets);
         } catch (error) {
             console.error('Error fetching buckets:', error);
-            setBuckets([]);
-        } finally {
-            setLoading(false);
+            dispatch(setError(error.message));
         }
     };
 
@@ -43,43 +30,52 @@ const Buckets = () => {
     }, []);
 
     // Function to handle bucket name update
-    const handleUpdateBucket = (bucketId, newName) => {
-        setBuckets(prevBuckets => 
-            prevBuckets.map(bucket => 
-                bucket.id === bucketId 
-                    ? { ...bucket, name: newName }
-                    : bucket
-            )
-        );
-        
-        // Make API call or function call with bucket ID and new name
-        console.log('Updating bucket:', { bucketId, newName });
-        // TODO: Replace with actual API call
-        // updateBucketName(bucketId, newName);
+    const handleUpdateBucket = async (bucketId, newName) => {
+        try {
+            const response = await updateBucketName(bucketId, newName);
+            if (response.status_code === 200) {
+                dispatch(updateBucket({ id: bucketId, name: newName }));
+                console.log('Bucket updated successfully:', response.content);
+            } else {
+                console.error('Failed to update bucket:', response);
+            }
+        } catch (error) {
+            console.error('Error updating bucket:', error);
+        }
     };
 
     // Function to handle bucket creation
-    const handleCreateBucket = (bucketName) => {
-        // Generate a mock UUID for the new bucket
-        const generateMockId = () => {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        };
-        
-        const newBucket = {
-            id: generateMockId(),
-            name: bucketName
-        };
-        
-        setBuckets(prevBuckets => [...prevBuckets, newBucket]);
-        
-        // Make API call or function call with bucket name
-        console.log('Creating bucket:', { bucketName });
-        // TODO: Replace with actual API call
-        // createBucket(bucketName);
+    const handleCreateBucket = async (bucketName) => {
+        try {
+            const response = await addNewBucket(bucketName);
+            if (response.status_code === 200) {
+                const newBucket = {
+                    id: response.content.bucketId,
+                    name: response.content.bucketName
+                };
+                dispatch(addBucket(newBucket));
+                console.log('Bucket created successfully:', response.content);
+            } else {
+                console.error('Failed to create bucket:', response);
+            }
+        } catch (error) {
+            console.error('Error creating bucket:', error);
+        }
+    };
+
+    // Function to handle bucket deletion
+    const handleDeleteBucket = async (bucketId) => {
+        try {
+            const response = await deleteBucketService(bucketId);
+            if (response.status_code === 200) {
+                dispatch(deleteBucket(bucketId));
+                console.log('Bucket deleted successfully:', response.content);
+            } else {
+                console.error('Failed to delete bucket:', response);
+            }
+        } catch (error) {
+            console.error('Error deleting bucket:', error);
+        }
     };
 
     return (
@@ -153,6 +149,7 @@ const Buckets = () => {
                             key={bucket.id}
                             bucket={bucket}
                             onUpdateBucket={handleUpdateBucket}
+                            onDeleteBucket={handleDeleteBucket}
                             viewMode={viewMode}
                         />
                     ))}

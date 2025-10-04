@@ -4,6 +4,7 @@ import floatingWidgetSlice from './slices/floatingWidgetSlice'
 import uiVisibilityReducer from './slices/uiVisibilitySlice'
 import chatStateReducer from './slices/chatStateSlice'
 import webSocketReducer from './slices/websocketSlice'
+import bucketsReducer from './slices/bucketsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     uiVisibility: uiVisibilityReducer,
     chatState: chatStateReducer,
     webSocket: webSocketReducer,
+    buckets: bucketsReducer,
     // Add your other reducers here as you create them
   },
   middleware: (getDefaultMiddleware) =>
