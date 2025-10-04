@@ -16,23 +16,15 @@ const log = require('electron-log');
 const {os} = require('os');
 const {url} = require('inspector');
 
-const Docker = require('dockerode');
-let docker = null;
-
 // Import our custom logger
 const logger = require('./logger');
 
-import { initDb,
-  getAgentsInfo,
-  addAgentInfo,
-  updateAgentEnvVariable} from './db/db.js';
+// DB functions removed for now
 
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { execSync } from 'child_process';
-
-import mqtt from 'mqtt';
 
 
 // Imports and modules END !!! ---------------------------------------------------------------------------------------------------
@@ -42,11 +34,9 @@ import mqtt from 'mqtt';
 
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
-let mainWindow, store, widgetWindow, setupWindow, tray;
+let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
-
-let inSetupPhase = true;
 
 // Configure auto-updater logging
 autoUpdater.logger = log;
@@ -83,54 +73,7 @@ ipcMain.on('change-window', (event, arg) => {
 
 // Window Creation Functions !!! ------------------------------------------------------------------------------------------------------
 
-// Setup window creation function
-function createSetupWindow() {
-  logger.info('Creating setup window');
-  setupWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
-    show: false,
-    frame: false, // Remove default titlebar
-    autoHideMenuBar: true,
-    resizable: false,
-    center: true,
-    webPreferences: {
-      preload: join(__dirname, '../preload/preload.js'),
-      sandbox: false,
-      contextIsolation: true,
-      devTools: true,
-    },
-  });
-
-  setupWindow.on('ready-to-show', () => {
-    setupWindow.show();
-  });
-
-  // Loading HTML and Configuring the Setup Window
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
-    const setupUrl = baseUrl.endsWith('/') ? baseUrl + '?setup=true' : baseUrl + '/?setup=true';
-    logger.debug('Loading setup window from URL', { url: setupUrl });
-    setupWindow.loadURL(setupUrl);
-  } else {
-    const setupPath = join(__dirname, '../renderer/index.html');
-    logger.debug('Loading setup window from file', { path: setupPath });
-    setupWindow.loadFile(setupPath);
-    setupWindow.loadFile(setupPath, { query: { setup: 'true' } });
-  }
-
-  setupWindow.setMenuBarVisibility(false);
-
-  // Handle setup window close event
-  setupWindow.on('close', (event) => {
-    if (!app.isQuiting) {
-      event.preventDefault();
-      logger.info('Setup window closed without continuing, quitting app');
-      // If setup window is closed without continuing, quit the app
-      app.quit();
-    }
-  });
-}
+// Note: setup window flow removed. App will open main renderer and create widget directly.
 
 // Undetectable Widget Window Class !!! ---------------------------------------------------------------------------------------------------
 
@@ -547,19 +490,7 @@ ipcMain.handle('stop-agent', (event, agentId) =>{
 
 
 
-ipcMain.handle('db:getAgentsInfo', async () => {
-  return await getAgentsInfo();
-});
-
-// Add a new agent
-ipcMain.handle('db:addAgentInfo', async (event, agentInfo) => {
-  return await addAgentInfo(agentInfo);
-});
-
-// New handler for updating environment variables
-ipcMain.handle('db:updateAgentEnv', async (event, agentId, varName, varValue) => {
-  return await updateAgentEnvVariable(agentId, varName, varValue);
-});
+// DB IPC handlers removed temporarily
 
 // Custom titlebar handlers
 ipcMain.handle('window:close', () => {
@@ -716,23 +647,7 @@ ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => 
   }
 });
 
-// Setup window handlers
-ipcMain.handle('setup:continue', () => {
-  logger.info('Setup continue button pressed');
-  // First create the main and widget windows
-  console.log('Creating main and widget windows...');
-  inSetupPhase = false;
-  createMainAndWidgetWindows();
-
-  // Then destroy the setup window
-  if (setupWindow && !setupWindow.isDestroyed()) {
-    logger.info('Destroying setup window');
-    app.isQuiting = false; // Ensure we don't trigger app quit
-    setupWindow.destroy(); // Use destroy() instead of close() to prevent the close event handler
-    setupWindow = null;
-    logger.info("Setup window destroyed");
-  }
-});
+// Setup flow removed; app opens main renderer directly
 
 // Finalizing agent handler
 ipcMain.handle('finalizing-agent', async () => {
@@ -2274,73 +2189,6 @@ function executeWslCommand(command , distroName , username = "root" , needOutput
 
 
 
-
-// Config MQTT Section !!! ----------------------------------------------------------------------------------------------------------------
-
-
-
-function setupMQTT() {
-  const client = mqtt.connect("mqtt://57.159.24.214:1883", {
-    clientId: "electronApp1",
-    clean: true
-  })
-
-  client.on('connect', () => {
-    console.log("[MQTT] Connected to broker")
-
-    client.subscribe("desktop/donnaMobileConnectRequest", { qos: 1 }, (err) => {
-      if (!err) {
-        console.log("Subscribed to desktop/donnaMobileConnectRequest")
-      }
-      else {
-        console.error("[MQTT] Subscribe error:", err)
-      }
-    })
-
-    client.subscribe("desktop/donnaMobileDisconnect", { qos: 1 }, (err) => {
-      if (!err) {
-        console.log("Subscribed to desktop/donnaMobileDisconnect")
-      }
-      else {
-        console.error("[MQTT] Subscribe error:", err)
-      }
-    })
-  })
-
-  client.on('message', (topic, message) => {
-    const msg = message.toString()
-    console.log(`[MQTT] Event received on ${topic}: ${msg}`)
-
-    if (topic == "desktop/donnaMobileConnectRequest") {
-      // Send event to renderer process
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send("donna-mobile-connect-request", { topic, message: msg })
-      }
-    }
-    else if (topic == "desktop/donnaMobileDisconnect") {
-      // Send event to renderer process
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send("donna-mobile-disconnect", { topic, message: msg })
-      }
-    }
-    
-  })
-
-  client.on('disconnect', () => {
-    console.log("[MQTT] Disconnected from broker")
-  })
-
-  client.on('error', (err) => {
-    console.error("[MQTT] Error:", err)
-  })
-}
-
-
-// Config MQTT Section END !!! ----------------------------------------------------------------------------------------------------------------
-
-
-
-
 // App Event Trigger Section !!! --------------------------------------------------------------------------------
 
 
@@ -2400,7 +2248,6 @@ app.whenReady().then(async () => {
 
   // Initialize quitting flag
   app.isQuiting = false;
-  setupMQTT()
   
 
   // Single Instance Check 
@@ -2436,26 +2283,13 @@ app.whenReady().then(async () => {
         logger.debug('Widget shown');
       }
     } else {
-      if(!inSetupPhase){
-        // If widget window doesn't exist, create it
-        logger.debug('Widget window does not exist, creating new one');
-        createWidgetWindow();
-      }
-      else{
-        logger.debug('In Setup Phase, Widget Window would not be loaded');
-      }
+      // If widget window doesn't exist, create it
+      logger.debug('Widget window does not exist, creating new one');
+      createWidgetWindow();
     }
   });
 
-  // Initialize DB 
-  try{ 
-    logger.info('Initializing database');
-    initDb();
-    logger.info('Database initialized successfully');
-  }
-  catch (error) { 
-    logger.error('Failed to initialize database', error); 
-  }
+  // Initialize DB - removed for now
 
   // Load Store
   logger.info('Loading application store');
@@ -2473,9 +2307,9 @@ app.whenReady().then(async () => {
     // autoUpdater.checkForUpdates();
   
 
-  // Create setup window first
-  logger.info('Creating initial setup window');
-  createSetupWindow();
+  // Create main and widget windows directly
+  logger.info('Creating initial main and widget windows');
+  createMainAndWidgetWindows();
 
   // Register Protocol with the Windows
   // Note: Protocol handling will be set up after main window is created
@@ -2496,16 +2330,7 @@ app.on('will-quit' , async (event) => {
     tray = null;
   }
 
-  // Clean up setup window
-  if (setupWindow && !setupWindow.isDestroyed()) {
-    try {
-      logger.debug('Closing setup window during quit');
-      setupWindow.close();
-      setupWindow = null;
-    } catch (error) {
-      logger.error('Error closing setup window during quit', error);
-    }
-  }
+  // setupWindow removed; no cleanup required
 
   // Clean up widget window
   if (widgetWindow && !widgetWindow.isDestroyed()) {
