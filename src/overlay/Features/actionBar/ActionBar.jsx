@@ -14,6 +14,7 @@ const ActionBar = () => {
   
   const [selectedOption, setSelectedOption] = useState('Select Option');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [screenshotStatus, setScreenshotStatus] = useState('ready'); // 'ready', 'processing', 'success'
   const dropdownRef = useRef(null);
   
   const position = floatingWidgetPosition || { x: 1200, y: 20 };
@@ -98,19 +99,50 @@ const ActionBar = () => {
     setIsDropdownOpen(false);
   };
 
-  // Capture screenshot and save locally
+    // Capture screenshot and save locally
   const handleActionButton = async () => {
     console.log(`Action button clicked with option: ${selectedOption}`);
-    // Electron desktopCapturer is only available in renderer
+    
+    // Set status to processing (red)
+    setScreenshotStatus('processing');
+    
+    // Try both electronAPI and widgetAPI for screenshot functionality
+    let screenshotAPI = null;
     if (window && window.electronAPI && window.electronAPI.captureAndSaveScreenshot) {
+      screenshotAPI = window.electronAPI;
+      console.log('Using electronAPI for screenshot');
+    } else if (window && window.widgetAPI && window.widgetAPI.captureAndSaveScreenshot) {
+      screenshotAPI = window.widgetAPI;
+      console.log('Using widgetAPI for screenshot');
+    }
+    
+    if (screenshotAPI) {
       try {
-        await window.electronAPI.captureAndSaveScreenshot();
-        console.log('Screenshot captured and saved successfully.');
+        const result = await screenshotAPI.captureAndSaveScreenshot();
+        console.log('Screenshot captured and saved successfully.', result);
+        
+        // Set status to success (green)
+        setScreenshotStatus('success');
+        
+        // After 2.5 seconds, reset to ready (grey)
+        setTimeout(() => {
+          setScreenshotStatus('ready');
+        }, 2500);
+        
       } catch (err) {
         console.error('Failed to capture or save screenshot:', err);
+        
+        // On error, reset to ready after a short delay
+        setTimeout(() => {
+          setScreenshotStatus('ready');
+        }, 1000);
       }
     } else {
+      console.error('Screenshot functionality is not available. electronAPI:', !!window.electronAPI, 'widgetAPI:', !!window.widgetAPI);
       alert('Screenshot functionality is not available.');
+      
+      // Reset status to ready
+      setScreenshotStatus('ready');
     }
   };
 
@@ -133,6 +165,19 @@ const ActionBar = () => {
 
   return (
     <HoverComponent>
+      {/* Add CSS animation for pulsing effect */}
+      <style>
+        {`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}
+      </style>
       <div style={{
         position: 'fixed',
         left: safeLeft,
@@ -269,34 +314,56 @@ const ActionBar = () => {
             )}
           </div>
 
-          {/* Action Button */}
-          <button
-            onClick={handleActionButton}
-            style={{
-              background: themeColors.primaryBlue,
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px 16px',
-              color: themeColors.primaryText,
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#0056CC';
-              e.target.style.transform = 'scale(1.05)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = themeColors.primaryBlue;
-              e.target.style.transform = 'scale(1)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            Add
-          </button>
+          {/* Action Button with Status Indicator */}
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* Status Circle */}
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: screenshotStatus === 'ready' ? '#6B7280' : 
+                         screenshotStatus === 'processing' ? '#EF4444' : '#10B981',
+              marginBottom: '4px',
+              transition: 'background-color 0.3s ease',
+              boxShadow: screenshotStatus === 'processing' ? '0 0 8px rgba(239, 68, 68, 0.6)' : 
+                         screenshotStatus === 'success' ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
+              animation: screenshotStatus === 'processing' ? 'pulse 1s infinite' : 'none'
+            }} />
+
+            <button
+              onClick={handleActionButton}
+              disabled={screenshotStatus === 'processing'}
+              style={{
+                background: screenshotStatus === 'processing' ? '#6B7280' : themeColors.primaryBlue,
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                color: themeColors.primaryText,
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: screenshotStatus === 'processing' ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+                opacity: screenshotStatus === 'processing' ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (screenshotStatus !== 'processing') {
+                  e.target.style.background = '#0056CC';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (screenshotStatus !== 'processing') {
+                  e.target.style.background = themeColors.primaryBlue;
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }
+              }}
+            >
+              {screenshotStatus === 'processing' ? 'Taking...' : 'Add'}
+            </button>
+          </div>
         </div>
       </div>
     </HoverComponent>

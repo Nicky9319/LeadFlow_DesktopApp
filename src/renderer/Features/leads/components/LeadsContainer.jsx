@@ -12,6 +12,8 @@ const LeadsContainer = ({ leads = [] }) => {
   const [rightSwipeSensitivity, setRightSwipeSensitivity] = useState(150);
   const [useSeparateSensitivity, setUseSeparateSensitivity] = useState(false);
   const [singleSwipeMode, setSingleSwipeMode] = useState(false);
+  const [swipeInProgress, setSwipeInProgress] = useState(false);
+  const [lastSwipeTime, setLastSwipeTime] = useState(0);
   const [showSensitivityControl, setShowSensitivityControl] = useState(false);
   const [isEditingSensitivity, setIsEditingSensitivity] = useState(false);
   const [editSensitivityValue, setEditSensitivityValue] = useState('');
@@ -173,25 +175,26 @@ const LeadsContainer = ({ leads = [] }) => {
   const onTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setSwipeInProgress(false);
   };
 
   const onTouchMove = (e) => {
-    if (singleSwipeMode) {
-      // In single swipe mode, we don't track movement, just detect any swipe
-      setTouchEnd(e.targetTouches[0].clientX);
-    } else {
-      setTouchEnd(e.targetTouches[0].clientX);
-    }
+    setTouchEnd(e.targetTouches[0].clientX);
   };
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
+    const currentTime = Date.now();
     
     if (singleSwipeMode) {
       // In single swipe mode, any horizontal movement triggers navigation
-      if (Math.abs(distance) > 10) { // Minimal threshold just to detect direction
+      // But only if we haven't already processed a swipe recently (like Windows desktop switching)
+      if (Math.abs(distance) > 10 && !swipeInProgress && (currentTime - lastSwipeTime) > 300) {
+        setSwipeInProgress(true);
+        setLastSwipeTime(currentTime);
+        
         if (distance > 0) {
           // Swipe left (finger moves left) -> Previous lead
           handlePrevious();
@@ -199,6 +202,9 @@ const LeadsContainer = ({ leads = [] }) => {
           // Swipe right (finger moves right) -> Next lead
           handleNext();
         }
+        
+        // Reset swipe progress after a longer delay to prevent multiple swipes
+        setTimeout(() => setSwipeInProgress(false), 500);
       }
     } else {
       // Normal mode with sensitivity thresholds
@@ -223,8 +229,13 @@ const LeadsContainer = ({ leads = [] }) => {
     // Check if it's a horizontal scroll (touchpad two-finger swipe)
     if (singleSwipeMode) {
       // In single swipe mode, any horizontal movement triggers navigation
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
+      // But only if we haven't already processed a swipe recently (like Windows desktop switching)
+      const currentTime = Date.now();
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5 && !swipeInProgress && (currentTime - lastSwipeTime) > 300) {
         e.preventDefault();
+        setSwipeInProgress(true);
+        setLastSwipeTime(currentTime);
+        
         if (e.deltaX > 0) {
           // Scroll right -> Previous lead
           handlePrevious();
@@ -232,6 +243,9 @@ const LeadsContainer = ({ leads = [] }) => {
           // Scroll left -> Next lead
           handleNext();
         }
+        
+        // Reset swipe progress after a longer delay to prevent multiple swipes
+        setTimeout(() => setSwipeInProgress(false), 500);
       }
     } else {
       // Normal mode with sensitivity thresholds
