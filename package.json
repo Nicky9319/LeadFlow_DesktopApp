@@ -1,7 +1,7 @@
 {
   "name": "leadflow",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "description": "A Desktop application to manage and process leads efficiently.",
   "main": "./out/main/main.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
