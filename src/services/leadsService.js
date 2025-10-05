@@ -109,7 +109,15 @@ const updateLeadNotes = async (leadId, notes) => {
 
 // Add lead by uploading an image file
 const addLead = async (imageFile, bucketId = null) => {
+  console.log('🔄 leadsService.addLead called with:', {
+    fileName: imageFile?.name,
+    fileSize: imageFile?.size,
+    fileType: imageFile?.type,
+    bucketId: bucketId
+  });
+
   if (!imageFile) {
+    console.error('❌ leadsService.addLead: No image file provided');
     return { status_code: 400, content: { detail: 'Image file is required' } };
   }
 
@@ -121,27 +129,40 @@ const addLead = async (imageFile, bucketId = null) => {
     // Add bucket_id if provided
     if (bucketId) {
       formData.append('bucket_id', bucketId);
+      console.log('✅ leadsService.addLead: Added bucket_id to FormData:', bucketId);
     }
 
     const url = `${ipAddress}/api/main-service/leads/add-lead`;
+    console.log('📤 leadsService.addLead: Making request to:', url);
+    
     const fetchOptions = {
       method: 'POST',
       body: formData,
       // Don't set Content-Type header - let browser set it with boundary for FormData
     };
 
+    console.log('⏳ leadsService.addLead: Sending request...');
     const resp = await fetch(url, fetchOptions);
+    console.log('📥 leadsService.addLead: Response received - Status:', resp.status, 'OK:', resp.ok);
+    
     let content;
     try {
       content = await resp.json();
+      console.log('✅ leadsService.addLead: JSON response parsed:', content);
     } catch (err) {
       // Non-JSON response
-      content = { detail: await resp.text() };
+      console.log('⚠️ leadsService.addLead: Non-JSON response, getting text...');
+      const textContent = await resp.text();
+      console.log('📄 leadsService.addLead: Text response:', textContent);
+      content = { detail: textContent };
     }
 
-    return { status_code: resp.status, content };
+    const result = { status_code: resp.status, content };
+    console.log('🔙 leadsService.addLead: Returning result:', result);
+    return result;
   } catch (error) {
-    console.error('Network error while adding lead:', error);
+    console.error('💥 leadsService.addLead: Network error:', error);
+    console.error('💥 leadsService.addLead: Error stack:', error.stack);
     return { status_code: 503, content: { detail: String(error) } };
   }
 };

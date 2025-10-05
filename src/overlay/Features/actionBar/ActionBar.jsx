@@ -5,6 +5,7 @@ import { themeColors } from '../common/utils/colors';
 import { setChatInterfaceVisible } from '../../store/slices/uiVisibilitySlice';
 import { setBuckets } from '../../store/slices/bucketsSlice';
 import { getAllBuckets } from '../../../services/bucketsServices';
+import { addLead } from '../../../services/leadsService';
 
 const ActionBar = () => {
   const dispatch = useDispatch();
@@ -13,10 +14,23 @@ const ActionBar = () => {
   const buckets = useSelector((state) => state.buckets.buckets);
   
   const [selectedOption, setSelectedOption] = useState('Select Option');
+  const [selectedBucketId, setSelectedBucketId] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [screenshotStatus, setScreenshotStatus] = useState('ready'); // 'ready', 'processing', 'success'
   const dropdownRef = useRef(null);
   const [globalShortcutFeedback, setGlobalShortcutFeedback] = useState(false);
+  
+  // Local state for buckets to ensure they're always available
+  const [localBuckets, setLocalBuckets] = useState([]);
+  const [bucketNames, setBucketNames] = useState([]);
+  const [bucketIds, setBucketIds] = useState([]);
+  
+  // Refs to store current bucket state for event handlers (to avoid closure issues)
+  const localBucketsRef = useRef([]);
+  const bucketNamesRef = useRef([]);
+  const bucketIdsRef = useRef([]);
+  const selectedOptionRef = useRef('Select Option');
+  const selectedBucketIdRef = useRef(null);
   
   const position = floatingWidgetPosition || { x: 1200, y: 20 };
   const isNearRightEdge = position.x > window.innerWidth - 300;
@@ -25,10 +39,10 @@ const ActionBar = () => {
     Math.max(10, position.x - barWidth - 20) :
     Math.min(window.innerWidth - barWidth - 10, position.x + 60);
 
-  const dropdownOptions = buckets.map(bucket => bucket.name);
+  const dropdownOptions = localBuckets.map(bucket => bucket.name);
   
   // Debug logging
-  console.log('ActionBar current buckets:', buckets, 'dropdownOptions:', dropdownOptions);
+  console.log('ActionBar current buckets (Redux):', buckets, 'localBuckets:', localBuckets, 'dropdownOptions:', dropdownOptions);
 
   // Event handler function (moved outside useEffect for testability)
   const onBucketsUpdated = (event, data) => {
@@ -44,6 +58,9 @@ const ActionBar = () => {
       if (eventName === 'buckets-updated' && payload && Array.isArray(payload)) {
         console.log('ActionBar: Updating buckets with:', payload);
         dispatch(setBuckets(payload));
+      } else if (eventName === 'screenshot-image-captured' && payload) {
+        console.log('ActionBar: Screenshot image captured event received!');
+        handleScreenshotImageCaptured(payload);
       } else if (eventName === 'screenshot-processing' && payload) {
         console.log('ActionBar: Global screenshot processing - updating UI state');
         setScreenshotStatus('processing');
@@ -103,6 +120,219 @@ const ActionBar = () => {
       }
     } catch (err) {
       console.error('Error applying IPC event payload:', err);
+    }
+  };
+
+  // Function to convert base64 image to File and add lead
+  const addLeadFromScreenshot = async (imageDataUrl, bucketId, screenshotInfo) => {
+    try {
+      console.log('🔄 Converting image data to File object...');
+      
+      // Convert base64 data URL to Blob directly (avoid CSP issues with fetch on data URLs)
+      const base64Data = imageDataUrl.split(',')[1]; // Remove data:image/png;base64, prefix
+      const binaryString = atob(base64Data); // Decode base64
+      const bytes = new Uint8Array(binaryString.length);
+      
+      // Convert binary string to byte array
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      // Create blob from byte array
+      const blob = new Blob([bytes], { type: 'image/png' });
+      
+      // Create a proper filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `screenshot-${timestamp}.png`;
+      
+      // Create File object
+      const imageFile = new File([blob], filename, { type: 'image/png' });
+      
+      console.log('✅ Image File created:', {
+        name: imageFile.name,
+        size: imageFile.size,
+        sizeInKB: (imageFile.size / 1024).toFixed(2) + ' KB',
+        type: imageFile.type,
+        bucketId: bucketId
+      });
+      
+      console.log('📤 Calling addLead API...');
+      
+      // Call the addLead function from leadsService
+      const result = await addLead(imageFile, bucketId);
+      
+      console.log('📥 AddLead API Response received:');
+      console.log('- Status Code:', result.status_code);
+      console.log('- Content Type:', typeof result.content);
+      console.log('- Full Response:', result);
+      console.log('- Response Content:', JSON.stringify(result.content, null, 2));
+      
+      // Check for success status codes (200, 201, 202)
+      if (result.status_code >= 200 && result.status_code < 300) {
+        console.log('🎉 Lead processing initiated successfully!');
+        console.log('✅ Response Details:', result.content);
+        
+        // You can dispatch an action here to update the UI or show a success message
+        // dispatch(addLeadToStore(result.content));
+        
+        const successMessage = result.content?.message || result.content?.detail || 'Lead created successfully!';
+        console.log('📢 Success message:', successMessage);
+        
+        // Handle different success scenarios
+        if (result.status_code === 202) {
+          console.log('🔄 Lead is being processed in the background');
+          alert(`✅ ${successMessage}\n\n📋 Details:\n- Request ID: ${result.content?.request_id}\n- File: ${result.content?.filename}\n- Status: ${result.content?.status}`);
+        } else {
+          alert(`✅ Lead created successfully! ${successMessage}`);
+        }
+      } else {
+        console.error('❌ Failed to create lead - Status:', result.status_code);
+        console.error('❌ Error details:', result.content);
+        
+        const errorMessage = result.content?.detail || result.content?.message || `API returned status ${result.status_code}`;
+        console.log('📢 Error message:', errorMessage);
+        alert(`❌ Failed to create lead: ${errorMessage}`);
+      }
+      
+    } catch (error) {
+      console.error('💥 Error in addLeadFromScreenshot:', error);
+      console.error('💥 Error stack:', error.stack);
+      console.error('💥 Error name:', error.name);
+      console.error('💥 Error message:', error.message);
+      
+      let userFriendlyMessage = 'Unknown error occurred';
+      
+      if (error.message.includes('Failed to fetch')) {
+        userFriendlyMessage = 'Network error - could not connect to server';
+      } else if (error.message.includes('NetworkError')) {
+        userFriendlyMessage = 'Network error - check your connection';
+      } else if (error.message.includes('timeout')) {
+        userFriendlyMessage = 'Request timeout - server took too long to respond';
+      } else {
+        userFriendlyMessage = error.message;
+      }
+      
+      alert(`Error creating lead: ${userFriendlyMessage}`);
+    }
+  };
+
+  // Function to handle detailed screenshot image captured event
+  const handleScreenshotImageCaptured = (payload) => {
+    console.log('=== SCREENSHOT IMAGE CAPTURED EVENT ===');
+    console.log('📸 Screenshot Image Data Details:');
+    
+    // Log image blob information
+    if (payload.imageBlob) {
+      console.log('🖼️ Image Blob Information:', {
+        size: payload.imageBlob.size,
+        sizeInKB: (payload.imageBlob.size / 1024).toFixed(2) + ' KB',
+        sizeInMB: (payload.imageBlob.size / (1024 * 1024)).toFixed(2) + ' MB',
+        type: payload.imageBlob.type,
+        timestamp: payload.imageBlob.timestamp,
+        base64Length: payload.imageBlob.base64Length
+      });
+    }
+    
+    // Log image resolution and file info
+    console.log('📐 Image Properties:', {
+      resolution: payload.resolution,
+      filePath: payload.filePath,
+      captureMethod: payload.captureMethod,
+      hasImageData: !!payload.imageDataUrl,
+      imageDataUrlLength: payload.imageDataUrl ? payload.imageDataUrl.length : 0
+    });
+    
+    // Log current bucket information using refs (to avoid closure issues)
+    const currentBuckets = localBucketsRef.current;
+    const currentBucketNames = bucketNamesRef.current;
+    const currentBucketIds = bucketIdsRef.current;
+    const currentSelectedOption = selectedOptionRef.current;
+    const currentSelectedBucketId = selectedBucketIdRef.current;
+    
+    console.log('🪣 Current Buckets Information:');
+    console.log('Total Buckets (Redux):', buckets ? buckets.length : 0);
+    console.log('Total Buckets (Local State):', localBuckets.length);
+    console.log('Total Buckets (Ref - Current):', currentBuckets.length);
+    console.log('Bucket Names Array (Ref):', currentBucketNames);
+    console.log('Bucket IDs Array (Ref):', currentBucketIds);
+    
+    if (currentBuckets && currentBuckets.length > 0) {
+      console.log('📋 Bucket List (from refs - current values):');
+      currentBuckets.forEach((bucket, index) => {
+        console.log(`  ${index + 1}. Name: "${bucket.name}" | ID: ${bucket.id}`);
+      });
+      
+      // Also log as a table for better readability
+      console.table(currentBuckets.map(bucket => ({
+        'Bucket Name': bucket.name,
+        'Bucket ID': bucket.id
+      })));
+      
+      // Log individual arrays
+      console.log('📝 Bucket Names (Current):', currentBucketNames);
+      console.log('🔢 Bucket IDs (Current):', currentBucketIds);
+    } else {
+      console.log('⚠️ No buckets available in current refs');
+      console.log('🔍 Fallback check - Local State Buckets:', localBuckets);
+      console.log('🔍 Fallback check - Redux Buckets:', buckets);
+    }
+    
+    // Log selected bucket information
+    console.log('🎯 Currently Selected:', {
+      selectedOptionState: selectedOption,
+      selectedOptionRef: currentSelectedOption,
+      selectedBucketIdState: selectedBucketId,
+      selectedBucketIdRef: currentSelectedBucketId,
+      isValidSelection: currentSelectedOption && currentSelectedOption !== 'Select Option'
+    });
+    
+    if (currentSelectedOption && currentSelectedOption !== 'Select Option') {
+      const selectedBucket = currentBuckets.find(b => b.name === currentSelectedOption);
+      if (selectedBucket) {
+        console.log('✅ Selected Bucket Details (from current refs):', {
+          name: selectedBucket.name,
+          id: selectedBucket.id,
+          matchesStoredId: selectedBucket.id === currentSelectedBucketId
+        });
+      } else {
+        console.log('❌ Selected bucket not found in current bucket refs');
+        console.log('🔍 Searching in local state buckets...');
+        const localBucket = localBuckets.find(b => b.name === currentSelectedOption);
+        if (localBucket) {
+          console.log('✅ Found in local state buckets:', {
+            name: localBucket.name,
+            id: localBucket.id
+          });
+        } else {
+          console.log('❌ Not found in local state buckets either');
+        }
+      }
+    }
+    
+    console.log('=== END SCREENSHOT IMAGE CAPTURED EVENT ===');
+    
+    // Convert image data to File and add lead
+    if (payload.imageDataUrl && currentSelectedBucketId) {
+      console.log('🚀 Starting lead creation process...');
+      console.log('📋 Lead Creation Details:', {
+        bucketId: currentSelectedBucketId,
+        bucketName: currentSelectedOption,
+        imageSize: payload.imageBlob?.size,
+        captureMethod: payload.captureMethod,
+        resolution: payload.resolution
+      });
+      addLeadFromScreenshot(payload.imageDataUrl, currentSelectedBucketId, payload);
+    } else {
+      console.log('⚠️ Cannot create lead - missing image data or bucket ID:', {
+        hasImageData: !!payload.imageDataUrl,
+        bucketId: currentSelectedBucketId,
+        selectedOption: currentSelectedOption
+      });
+    }
+    
+    // Also call the existing processing function for any additional processing
+    if (payload.imageDataUrl) {
+      processScreenshotInOverlay(payload.imageDataUrl, payload.resolution, payload.filePath);
     }
   };
 
@@ -168,8 +398,11 @@ const ActionBar = () => {
     console.log('ActionBar: Validating screenshot request from:', source);
     console.log('ActionBar: Current validation state:', {
       selectedOption,
+      selectedBucketId,
       bucketsLength: buckets ? buckets.length : 'null/undefined',
+      localBucketsLength: localBuckets.length,
       buckets: buckets,
+      localBuckets: localBuckets,
       dropdownOptions: dropdownOptions
     });
     
@@ -178,7 +411,7 @@ const ActionBar = () => {
       console.log('ActionBar: No valid option selected, attempting auto-selection');
       
       // Wait a moment and try to fetch fresh buckets if needed
-      let availableBuckets = buckets;
+      let availableBuckets = localBuckets.length > 0 ? localBuckets : buckets;
       if (!availableBuckets || availableBuckets.length === 0) {
         console.log('ActionBar: Buckets not loaded, attempting to fetch fresh buckets');
         try {
@@ -196,8 +429,12 @@ const ActionBar = () => {
       // Auto-select first bucket if available
       if (availableBuckets && availableBuckets.length > 0) {
         const firstBucket = availableBuckets[0].name;
+        const firstBucketId = availableBuckets[0].id;
         setSelectedOption(firstBucket);
-        console.log('ActionBar: Auto-selected option:', firstBucket);
+        setSelectedBucketId(firstBucketId);
+        selectedOptionRef.current = firstBucket;
+        selectedBucketIdRef.current = firstBucketId;
+        console.log('ActionBar: Auto-selected option:', firstBucket, 'with ID:', firstBucketId);
         
         // Show brief feedback that option was auto-selected
         setGlobalShortcutFeedback(true);
@@ -320,17 +557,66 @@ const ActionBar = () => {
     };
   }, [dispatch]);
 
-  // Set first bucket as default when buckets are loaded
+  // Sync local bucket state with Redux state
   useEffect(() => {
-    if (buckets && buckets.length > 0 && selectedOption === 'Select Option') {
-      setSelectedOption(buckets[0].name);
-      console.log('ActionBar: Set default selection to:', buckets[0].name);
+    if (buckets && Array.isArray(buckets)) {
+      console.log('ActionBar: Syncing local bucket state with Redux:', buckets);
+      const names = buckets.map(bucket => bucket.name);
+      const ids = buckets.map(bucket => bucket.id);
+      
+      setLocalBuckets(buckets);
+      setBucketNames(names);
+      setBucketIds(ids);
+      
+      // Update refs for event handlers
+      localBucketsRef.current = buckets;
+      bucketNamesRef.current = names;
+      bucketIdsRef.current = ids;
+      
+      console.log('ActionBar: Local bucket state and refs updated:', {
+        totalBuckets: buckets.length,
+        bucketNames: names,
+        bucketIds: ids
+      });
+      
+      // Set first bucket as default when buckets are loaded and no option is selected
+      if (buckets.length > 0 && selectedOption === 'Select Option') {
+        setSelectedOption(buckets[0].name);
+        setSelectedBucketId(buckets[0].id);
+        selectedOptionRef.current = buckets[0].name;
+        selectedBucketIdRef.current = buckets[0].id;
+        console.log('ActionBar: Set default selection to:', buckets[0].name, 'with ID:', buckets[0].id);
+      }
+    } else {
+      console.log('ActionBar: Clearing local bucket state - no buckets available');
+      setLocalBuckets([]);
+      setBucketNames([]);
+      setBucketIds([]);
+      localBucketsRef.current = [];
+      bucketNamesRef.current = [];
+      bucketIdsRef.current = [];
     }
   }, [buckets, selectedOption]);
 
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     setIsDropdownOpen(false);
+    selectedOptionRef.current = option;
+    
+    // Find and set the corresponding bucket ID
+    const selectedBucket = localBuckets.find(bucket => bucket.name === option);
+    if (selectedBucket) {
+      setSelectedBucketId(selectedBucket.id);
+      selectedBucketIdRef.current = selectedBucket.id;
+      console.log('ActionBar: Selected bucket:', {
+        name: selectedBucket.name,
+        id: selectedBucket.id
+      });
+    } else {
+      setSelectedBucketId(null);
+      selectedBucketIdRef.current = null;
+      console.log('ActionBar: No bucket found for selected option:', option);
+    }
   };
 
     // Capture screenshot and save locally
@@ -338,8 +624,11 @@ const ActionBar = () => {
     console.log(`ActionBar: Action button clicked with option: ${selectedOption}`);
     console.log('ActionBar: Button click state:', {
       selectedOption,
-      bucketsLength: buckets ? buckets.length : 'null/undefined',  
-      buckets: buckets
+      selectedBucketId,
+      bucketsLength: buckets ? buckets.length : 'null/undefined',
+      localBucketsLength: localBuckets.length,
+      buckets: buckets,
+      localBuckets: localBuckets
     });
     
     // Check if screenshot process is already active
@@ -354,10 +643,15 @@ const ActionBar = () => {
       console.log('ActionBar: No valid option selected from button, auto-selecting first available option');
       
       // Auto-select first bucket if available
-      if (buckets && buckets.length > 0) {
-        const firstBucket = buckets[0].name;
+      const availableBucketsForButton = localBuckets.length > 0 ? localBuckets : buckets;
+      if (availableBucketsForButton && availableBucketsForButton.length > 0) {
+        const firstBucket = availableBucketsForButton[0].name;
+        const firstBucketId = availableBucketsForButton[0].id;
         setSelectedOption(firstBucket);
-        console.log('ActionBar: Auto-selected option from button click:', firstBucket);
+        setSelectedBucketId(firstBucketId);
+        selectedOptionRef.current = firstBucket;
+        selectedBucketIdRef.current = firstBucketId;
+        console.log('ActionBar: Auto-selected option from button click:', firstBucket, 'with ID:', firstBucketId);
         
         // Continue with screenshot after auto-selection
         setTimeout(() => {
@@ -366,7 +660,7 @@ const ActionBar = () => {
         return;
       } else {
         console.log('ActionBar: No buckets available for button click, cannot take screenshot');
-        console.log('ActionBar: Button click final bucket state:', buckets);
+        console.log('ActionBar: Button click final bucket state - Redux:', buckets, 'Local:', localBuckets);
         alert('Please wait for buckets to load before taking a screenshot.');
         return;
       }
@@ -576,7 +870,7 @@ const ActionBar = () => {
                 overflow: 'hidden'
               }}>
                 {dropdownOptions.map((option, index) => {
-                  const bucket = buckets.find(b => b.name === option);
+                  const bucket = localBuckets.find(b => b.name === option);
                   return (
                     <button
                       key={index}

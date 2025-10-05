@@ -572,6 +572,25 @@ async function handleGlobalScreenshot() {
           }
         });
         console.log('Screenshot-taken event with image data sent successfully');
+        
+        // Send detailed image processing event
+        console.log('Sending screenshot-image-captured event for detailed processing');
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'screenshot-image-captured',
+          payload: {
+            imageBlob: {
+              size: result.imageData ? result.imageData.length : 0,
+              type: 'image/png',
+              timestamp: now,
+              base64Length: result.imageData ? result.imageData.replace('data:image/png;base64,', '').length : 0
+            },
+            imageDataUrl: result.imageData,
+            resolution: result.resolution,
+            filePath: result.filePath,
+            captureMethod: 'global-shortcut'
+          }
+        });
+        console.log('Screenshot-image-captured event sent for detailed processing');
       } catch (sendError) {
         console.warn('Failed to send success notification to widget:', sendError);
       }
@@ -702,6 +721,25 @@ ipcMain.handle('capture-and-save-screenshot', async (event) => {
           }
         });
         console.log('Screenshot-taken event with image data sent successfully');
+        
+        // Send detailed image processing event
+        console.log('Sending screenshot-image-captured event for detailed processing');
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'screenshot-image-captured',
+          payload: {
+            imageBlob: {
+              size: result.imageData ? result.imageData.length : 0,
+              type: 'image/png',
+              timestamp: now,
+              base64Length: result.imageData ? result.imageData.replace('data:image/png;base64,', '').length : 0
+            },
+            imageDataUrl: result.imageData,
+            resolution: result.resolution,
+            filePath: result.filePath,
+            captureMethod: 'button-click'
+          }
+        });
+        console.log('Screenshot-image-captured event sent for detailed processing');
       } catch (sendError) {
         console.warn('Failed to send success notification to widget:', sendError);
       }
