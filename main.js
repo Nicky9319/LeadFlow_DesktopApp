@@ -397,7 +397,27 @@ function createWidgetWindow() {
     widgetWindow.window.setMenuBarVisibility(false);
     widgetWindow.window.setPosition(0, 0);
     widgetWindow.window.setSize(1200, 800);
-}
+  }
+  
+  // Show the widget window by default when application starts
+  if (widgetWindow && widgetWindow.window) {
+    widgetWindow.window.once('ready-to-show', () => {
+      logger.info('Widget window ready to show, showing by default');
+      try {
+        widgetWindow.show();
+        // Set up proper overlay behavior
+        setTimeout(() => {
+          if (widgetWindow && !widgetWindow.isDestroyed()) {
+            widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+            widgetWindow.window.setAlwaysOnTop(true);
+            logger.debug('Widget window shown and configured for overlay mode');
+          }
+        }, 500);
+      } catch (error) {
+        logger.error('Error showing widget window on startup:', error);
+      }
+    });
+  }
 }
 
 // Function to safely recreate widget window
@@ -691,6 +711,35 @@ ipcMain.handle('capture-and-save-screenshot', async (event) => {
     
     return { success: false, error: error.message };
   }
+});
+
+// New IPC handler for validating screenshot requests (for global shortcut)
+ipcMain.handle('validate-and-capture-screenshot', async (event) => {
+  console.log('[Screenshot] validate-and-capture-screenshot IPC handler called from global shortcut.');
+  
+  // Send validation request to widget window first
+  if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+    try {
+      console.log('Sending screenshot validation request to widget window');
+      widgetWindow.window.webContents.send('eventFromMain', {
+        eventName: 'validate-screenshot-request',
+        payload: { source: 'global-shortcut', timestamp: Date.now() }
+      });
+      return { success: true, message: 'Validation request sent to overlay' };
+    } catch (sendError) {
+      console.warn('Failed to send validation request to widget:', sendError);
+      return { success: false, error: 'Failed to communicate with overlay window' };
+    }
+  } else {
+    console.warn('Widget window not available for validation');
+    return { success: false, error: 'Overlay window not available' };
+  }
+});
+
+// IPC handler for when overlay confirms screenshot should proceed
+ipcMain.handle('proceed-with-screenshot', async (event, source) => {
+  console.log(`[Screenshot] proceed-with-screenshot called from ${source}`);
+  return await handleGlobalScreenshot();
 });
 
 ipcMain.handle('get-ip-address', async (event) => {
@@ -2595,9 +2644,20 @@ app.whenReady().then(async () => {
   // Screenshot shortcut (Ctrl + 1)
   globalShortcut.register('CommandOrControl+1', () => {
     logger.debug('Screenshot shortcut Ctrl+1 pressed');
-    handleGlobalScreenshot().catch(error => {
-      logger.error('Global shortcut screenshot error:', error);
-    });
+    // Send validation request to overlay window instead of directly taking screenshot
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+      try {
+        console.log('Sending screenshot validation request to widget window from global shortcut');
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'validate-screenshot-request',
+          payload: { source: 'global-shortcut', timestamp: Date.now() }
+        });
+      } catch (sendError) {
+        console.warn('Failed to send validation request to widget from global shortcut:', sendError);
+      }
+    } else {
+      console.warn('Widget window not available for global shortcut validation');
+    }
   });
 
   // Initialize DB - removed for now

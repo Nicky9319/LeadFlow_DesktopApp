@@ -95,6 +95,9 @@ const ActionBar = () => {
         console.log('ActionBar: Global screenshot failed:', payload.error);
         setScreenshotStatus('ready');
         setGlobalShortcutFeedback(false);
+      } else if (eventName === 'validate-screenshot-request' && payload) {
+        console.log('ActionBar: Screenshot validation request received from:', payload.source);
+        handleScreenshotValidation(payload.source);
       } else {
         console.log('ActionBar: Ignoring event:', eventName);
       }
@@ -157,6 +160,86 @@ const ActionBar = () => {
       
     } catch (error) {
       console.error('ActionBar: Error processing screenshot image:', error);
+    }
+  };
+
+  // Function to handle screenshot validation requests
+  const handleScreenshotValidation = async (source) => {
+    console.log('ActionBar: Validating screenshot request from:', source);
+    console.log('ActionBar: Current validation state:', {
+      selectedOption,
+      bucketsLength: buckets ? buckets.length : 'null/undefined',
+      buckets: buckets,
+      dropdownOptions: dropdownOptions
+    });
+    
+    // Check if a valid option is selected
+    if (!selectedOption || selectedOption === 'Select Option') {
+      console.log('ActionBar: No valid option selected, attempting auto-selection');
+      
+      // Wait a moment and try to fetch fresh buckets if needed
+      let availableBuckets = buckets;
+      if (!availableBuckets || availableBuckets.length === 0) {
+        console.log('ActionBar: Buckets not loaded, attempting to fetch fresh buckets');
+        try {
+          const freshBuckets = await getAllBuckets();
+          console.log('ActionBar: Fresh buckets fetched:', freshBuckets);
+          if (freshBuckets && freshBuckets.length > 0) {
+            dispatch(setBuckets(freshBuckets));
+            availableBuckets = freshBuckets;
+          }
+        } catch (error) {
+          console.error('ActionBar: Failed to fetch fresh buckets:', error);
+        }
+      }
+      
+      // Auto-select first bucket if available
+      if (availableBuckets && availableBuckets.length > 0) {
+        const firstBucket = availableBuckets[0].name;
+        setSelectedOption(firstBucket);
+        console.log('ActionBar: Auto-selected option:', firstBucket);
+        
+        // Show brief feedback that option was auto-selected
+        setGlobalShortcutFeedback(true);
+        setTimeout(() => setGlobalShortcutFeedback(false), 1500);
+        
+        // Proceed with screenshot after a brief delay to show the selection
+        setTimeout(async () => {
+          console.log('ActionBar: Proceeding with screenshot after auto-selection');
+          await proceedWithValidatedScreenshot(source);
+        }, 500);
+      } else {
+        console.log('ActionBar: No buckets available even after fresh fetch, cannot take screenshot');
+        console.log('ActionBar: Final bucket state:', availableBuckets);
+        // Show error feedback
+        alert('Please wait for buckets to load before taking a screenshot.');
+        return;
+      }
+    } else {
+      console.log('ActionBar: Valid option already selected, proceeding with screenshot');
+      await proceedWithValidatedScreenshot(source);
+    }
+  };
+
+  // Function to proceed with screenshot after validation
+  const proceedWithValidatedScreenshot = async (source) => {
+    try {
+      let screenshotAPI = null;
+      if (window && window.electronAPI && window.electronAPI.proceedWithScreenshot) {
+        screenshotAPI = window.electronAPI;
+      } else if (window && window.widgetAPI && window.widgetAPI.proceedWithScreenshot) {
+        screenshotAPI = window.widgetAPI;
+      }
+      
+      if (screenshotAPI) {
+        console.log('ActionBar: Calling proceedWithScreenshot for source:', source);
+        const result = await screenshotAPI.proceedWithScreenshot(source);
+        console.log('ActionBar: Screenshot validation result:', result);
+      } else {
+        console.error('ActionBar: Screenshot API not available for validation');
+      }
+    } catch (error) {
+      console.error('ActionBar: Error proceeding with validated screenshot:', error);
     }
   };
 
@@ -252,12 +335,34 @@ const ActionBar = () => {
 
     // Capture screenshot and save locally
   const handleActionButton = async () => {
-    console.log(`Action button clicked with option: ${selectedOption}`);
+    console.log(`ActionBar: Action button clicked with option: ${selectedOption}`);
+    console.log('ActionBar: Button click state:', {
+      selectedOption,
+      bucketsLength: buckets ? buckets.length : 'null/undefined',  
+      buckets: buckets
+    });
     
     // Check if a valid option is selected
     if (!selectedOption || selectedOption === 'Select Option') {
-      console.log('No valid option selected, cannot take screenshot');
-      return;
+      console.log('ActionBar: No valid option selected from button, auto-selecting first available option');
+      
+      // Auto-select first bucket if available
+      if (buckets && buckets.length > 0) {
+        const firstBucket = buckets[0].name;
+        setSelectedOption(firstBucket);
+        console.log('ActionBar: Auto-selected option from button click:', firstBucket);
+        
+        // Continue with screenshot after auto-selection
+        setTimeout(() => {
+          handleActionButton(); // Recursive call after auto-selection
+        }, 100);
+        return;
+      } else {
+        console.log('ActionBar: No buckets available for button click, cannot take screenshot');
+        console.log('ActionBar: Button click final bucket state:', buckets);
+        alert('Please wait for buckets to load before taking a screenshot.');
+        return;
+      }
     }
     
     // Set status to processing (red)

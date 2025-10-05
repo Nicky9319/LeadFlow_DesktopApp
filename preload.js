@@ -41,6 +41,8 @@ if (process.contextIsolated) {
 
       // Screenshot functionality
       captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
+      validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
+      proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
       // Open external URLs
       openExternal: (url) => ipcRenderer.invoke('open-external', url),
     });
@@ -71,6 +73,8 @@ if (process.contextIsolated) {
 
       // Screenshot functionality
       captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
+      validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
+      proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
     });
 
   }
@@ -137,5 +141,7 @@ else{
 
     // Screenshot functionality
     captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
+    validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
+    proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
   }
 }
