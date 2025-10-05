@@ -1,5 +1,5 @@
-appId: com.donnaai.app
-productName: DonnaAI
+appId: com.leadflow.app
+productName: Leadflow
 directories:
   buildResources: build
 files:
@@ -11,11 +11,11 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: DonnaAI
+  executableName: leadflow
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: DonnaAI
-  uninstallDisplayName: DonnaAI
+  shortcutName: Leadflow
+  uninstallDisplayName: Leadflow
   createDesktopShortcut: always
 mac:
   entitlementsInherit: build/entitlements.mac.plist
