@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
-const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
+const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus, deleteLead }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [editedStatus, setEditedStatus] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!lead) return null;
 
@@ -71,6 +72,21 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
       // Fallback for development or if electronAPI is not available
       console.log('Would open URL:', url);
     }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteLead) {
+      deleteLead(lead.leadId);
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   const getStatusColor = (status) => {
@@ -193,6 +209,17 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
                 {lead.platform || 'Unknown Platform'}
               </span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDeleteClick}
+              className="p-2 text-[#FF3B30] hover:text-[#FF1D18] hover:bg-[#1C1C1E] rounded-lg transition-colors"
+              title="Delete lead"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -340,6 +367,34 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus }) => {
         </div>
 
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1C1C1E] rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">
+              Delete Lead
+            </h3>
+            <p className="text-[#E5E5E7] mb-6">
+              Are you sure you want to delete this lead? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-[#E5E5E7] bg-[#2D2D2F] hover:bg-[#3D3D3F] rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 text-white bg-[#FF3B30] hover:bg-[#FF1D18] rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

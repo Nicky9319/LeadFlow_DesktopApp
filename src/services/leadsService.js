@@ -168,4 +168,58 @@ const addLead = async (imageFile, bucketId = null) => {
   }
 };
 
-export { getAllLeads, updateLeadStatus, updateLeadNotes, addLead };
+// Delete lead
+const deleteLead = async (leadId, bucketId = null) => {
+  console.log('🔄 leadsService.deleteLead called with:', {
+    leadId: leadId,
+    bucketId: bucketId
+  });
+
+  if (!leadId) {
+    console.error('❌ leadsService.deleteLead: No leadId provided');
+    return { status_code: 400, content: { detail: 'lead_id is required' } };
+  }
+
+  try {
+    console.log('📤 leadsService.deleteLead: Attempting JSON body approach...');
+    
+    // Try with JSON body first (as your backend supports both)
+    const body = { lead_id: leadId };
+    if (bucketId) {
+      body.bucket_id = bucketId;
+    }
+
+    console.log('📤 leadsService.deleteLead: Making request with body:', body);
+
+    let resp = await request('/api/main-service/leads/delete-lead', {
+      method: 'DELETE',
+      body: JSON.stringify(body),
+    });
+
+    console.log('📥 leadsService.deleteLead: JSON body response:', resp);
+
+    // If JSON body approach fails with 404, try query parameters
+    if (resp.status_code === 404) {
+      console.log('⚠️ leadsService.deleteLead: JSON body failed with 404, trying query params...');
+      
+      const params = new URLSearchParams();
+      params.append('lead_id', leadId);
+      if (bucketId) {
+        params.append('bucket_id', bucketId);
+      }
+
+      const path = `/api/main-service/leads/delete-lead?${params.toString()}`;
+      console.log('📤 leadsService.deleteLead: Making request with query params to:', path);
+      
+      resp = await request(path, { method: 'DELETE' });
+      console.log('📥 leadsService.deleteLead: Query params response:', resp);
+    }
+
+    return resp;
+  } catch (error) {
+    console.error('💥 leadsService.deleteLead: Error:', error);
+    return { status_code: 503, content: { detail: String(error) } };
+  }
+};
+
+export { getAllLeads, updateLeadStatus, updateLeadNotes, addLead, deleteLead };

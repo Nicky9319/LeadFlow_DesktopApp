@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LeadsContainer from './components/LeadsContainer';
-import { getAllLeads, updateLeadStatus as apiUpdateLeadStatus, updateLeadNotes as apiUpdateLeadNotes } from '../../../services/leadsService';
+import { getAllLeads, updateLeadStatus as apiUpdateLeadStatus, updateLeadNotes as apiUpdateLeadNotes, deleteLead as apiDeleteLead } from '../../../services/leadsService';
 import { getAllBuckets } from '../../../services/bucketsServices';
 
 const Leads = () => {
@@ -79,6 +79,24 @@ const Leads = () => {
       }
     } catch (error) {
       console.error('Error updating lead status:', error);
+    }
+  };
+
+  // Function to delete lead
+  const deleteLead = async (leadId) => {
+    try {
+      const response = await apiDeleteLead(leadId, selectedBucketId);
+      if (response.status_code === 200) {
+        // Remove lead from local state on successful API call
+        setLeads(prevLeads => 
+          prevLeads.filter(lead => lead.leadId !== leadId)
+        );
+        console.log('Lead deleted successfully:', leadId);
+      } else {
+        console.error('Failed to delete lead:', response.content);
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
     }
   };
 
@@ -187,7 +205,7 @@ const Leads = () => {
           </div>
         </div>
         
-        <LeadsContainer leads={leads} updateLeadNotes={updateLeadNotes} updateLeadStatus={updateLeadStatus} />
+        <LeadsContainer leads={leads} updateLeadNotes={updateLeadNotes} updateLeadStatus={updateLeadStatus} deleteLead={deleteLead} />
       </div>
     </div>
   );
