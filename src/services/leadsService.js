@@ -107,4 +107,43 @@ const updateLeadNotes = async (leadId, notes) => {
   return resp;
 };
 
-export { getAllLeads, updateLeadStatus, updateLeadNotes };
+// Add lead by uploading an image file
+const addLead = async (imageFile, bucketId = null) => {
+  if (!imageFile) {
+    return { status_code: 400, content: { detail: 'Image file is required' } };
+  }
+
+  try {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    
+    // Add bucket_id if provided
+    if (bucketId) {
+      formData.append('bucket_id', bucketId);
+    }
+
+    const url = `${ipAddress}/api/main-service/leads/add-lead`;
+    const fetchOptions = {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header - let browser set it with boundary for FormData
+    };
+
+    const resp = await fetch(url, fetchOptions);
+    let content;
+    try {
+      content = await resp.json();
+    } catch (err) {
+      // Non-JSON response
+      content = { detail: await resp.text() };
+    }
+
+    return { status_code: resp.status, content };
+  } catch (error) {
+    console.error('Network error while adding lead:', error);
+    return { status_code: 503, content: { detail: String(error) } };
+  }
+};
+
+export { getAllLeads, updateLeadStatus, updateLeadNotes, addLead };
