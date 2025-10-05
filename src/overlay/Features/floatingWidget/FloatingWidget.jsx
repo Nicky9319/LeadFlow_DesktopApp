@@ -17,6 +17,7 @@ const FloatingWidget = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false);
   const [screenshotAnimation, setScreenshotAnimation] = useState('idle'); // 'idle', 'processing', 'success'
+  const [leadProcessingStatus, setLeadProcessingStatus] = useState('idle'); // 'idle', 'processing', 'success', 'error'
   const dispatch = useDispatch();
 
   // Debug: Log when component mounts
@@ -24,7 +25,7 @@ const FloatingWidget = () => {
     console.log('LeadFlow FloatingWidget mounted');
   }, []);
 
-  // Screenshot event listener
+  // Screenshot and Lead Processing event listener
   useEffect(() => {
     const onScreenshotEvent = (event, data) => {
       console.log('FloatingWidget received screenshot event:', data);
@@ -46,9 +47,43 @@ const FloatingWidget = () => {
         } else if (eventName === 'screenshot-error') {
           console.log('FloatingWidget: Screenshot error - reset animation');
           setScreenshotAnimation('idle');
+        } else if (eventName === 'lead-processing-feedback') {
+          console.log('FloatingWidget: Lead processing feedback received:', payload);
+          handleLeadProcessingFeedback(payload);
         }
       } catch (err) {
         console.error('FloatingWidget: Error handling screenshot event:', err);
+      }
+    };
+
+    // Handle lead processing feedback
+    const handleLeadProcessingFeedback = (data) => {
+      const { status, data: responseData } = data;
+      console.log('FloatingWidget: Handling lead processing feedback:', status, responseData);
+      
+      if (status === 'processing') {
+        setLeadProcessingStatus('processing');
+        console.log('FloatingWidget: Starting lead processing animation - background processing initiated');
+        
+        // For background processing (202 response), show longer processing animation
+        // The processing will continue until we get success/error feedback
+        
+      } else if (status === 'success') {
+        setLeadProcessingStatus('success');
+        console.log('FloatingWidget: Showing lead success animation');
+        
+        // Reset to idle after success animation (longer for better feedback)
+        setTimeout(() => {
+          setLeadProcessingStatus('idle');
+        }, 3000);
+      } else if (status === 'error') {
+        setLeadProcessingStatus('error');
+        console.log('FloatingWidget: Showing lead error animation');
+        
+        // Reset to idle after error animation
+        setTimeout(() => {
+          setLeadProcessingStatus('idle');
+        }, 2500);
       }
     };
 
@@ -328,31 +363,38 @@ const FloatingWidget = () => {
                 style={{
                   width: '24px',
                   height: '24px',
-                  background: screenshotAnimation === 'processing'
+                  background: screenshotAnimation === 'processing' || leadProcessingStatus === 'processing'
                     ? 'linear-gradient(135deg, #1E40AF 0%, #2563EB 25%, #3B82F6 50%, #2563EB 75%, #1E40AF 100%)'
-                    : screenshotAnimation === 'success'
+                    : screenshotAnimation === 'success' || leadProcessingStatus === 'success'
                       ? 'linear-gradient(135deg, #10B981, #34D399)'
-                      : themeColors.primaryBlue,
-                  backgroundSize: screenshotAnimation === 'processing' ? '300% 300%' : '100% 100%',
+                      : leadProcessingStatus === 'error'
+                        ? 'linear-gradient(135deg, #EF4444, #F87171)'
+                        : themeColors.primaryBlue,
+                  backgroundSize: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing') ? '300% 300%' : '100% 100%',
                   borderRadius: '50%',
                   position: 'relative',
                   transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  filter: screenshotAnimation === 'processing' ? 'blur(2px)' : 
-                         screenshotAnimation === 'success' ? 'blur(0.5px)' : 'blur(1.5px)',
-                  boxShadow: screenshotAnimation === 'processing'
+                  filter: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing') ? 'blur(2px)' : 
+                         (screenshotAnimation === 'success' || leadProcessingStatus === 'success') ? 'blur(0.5px)' : 
+                         leadProcessingStatus === 'error' ? 'blur(1px)' : 'blur(1.5px)',
+                  boxShadow: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing')
                     ? '0 0 28px rgba(30, 64, 175, 0.7), 0 0 56px rgba(37, 99, 235, 0.5), 0 0 84px rgba(59, 130, 246, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.3)'
-                    : screenshotAnimation === 'success'
+                    : (screenshotAnimation === 'success' || leadProcessingStatus === 'success')
                       ? '0 0 20px rgba(16, 185, 129, 0.9), 0 0 40px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.4)'
-                      : isClicked
-                        ? `0 0 32px ${themeColors.primaryBlue}DD, 0 0 64px ${themeColors.primaryBlue}99, inset 0 0 8px rgba(255, 255, 255, 0.25)`
-                        : isHovered 
-                          ? `0 0 28px ${themeColors.primaryBlue}BB, 0 0 56px ${themeColors.primaryBlue}77, inset 0 0 8px rgba(255, 255, 255, 0.2)`
-                          : `0 0 16px ${themeColors.primaryBlue}88, 0 0 32px ${themeColors.primaryBlue}44, inset 0 0 6px rgba(255, 255, 255, 0.15)`,
-                  animation: screenshotAnimation === 'processing' 
+                      : leadProcessingStatus === 'error'
+                        ? '0 0 20px rgba(239, 68, 68, 0.9), 0 0 40px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.4)'
+                        : isClicked
+                          ? `0 0 32px ${themeColors.primaryBlue}DD, 0 0 64px ${themeColors.primaryBlue}99, inset 0 0 8px rgba(255, 255, 255, 0.25)`
+                          : isHovered 
+                            ? `0 0 28px ${themeColors.primaryBlue}BB, 0 0 56px ${themeColors.primaryBlue}77, inset 0 0 8px rgba(255, 255, 255, 0.2)`
+                            : `0 0 16px ${themeColors.primaryBlue}88, 0 0 32px ${themeColors.primaryBlue}44, inset 0 0 6px rgba(255, 255, 255, 0.15)`,
+                  animation: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing')
                     ? 'siriOrbPulse 1.2s ease-in-out infinite, siriFlowingGradient 4s ease-in-out infinite' 
-                    : screenshotAnimation === 'success'
+                    : (screenshotAnimation === 'success' || leadProcessingStatus === 'success')
                       ? 'successBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                      : 'heartbeatColor 2s ease-in-out infinite',
+                      : leadProcessingStatus === 'error'
+                        ? 'errorShake 0.6s ease-in-out'
+                        : 'heartbeatColor 2s ease-in-out infinite',
                   pointerEvents: 'none',
                   zIndex: 2
                 }}
@@ -385,17 +427,21 @@ const FloatingWidget = () => {
                   height: '32px',
                   transform: 'translate(-50%, -50%)',
                   borderRadius: '50%',
-                  background: screenshotAnimation === 'processing'
+                  background: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing')
                     ? 'radial-gradient(circle, rgba(30, 64, 175, 0.3) 0%, rgba(37, 99, 235, 0.2) 35%, rgba(59, 130, 246, 0.1) 65%, transparent 100%)'
-                    : screenshotAnimation === 'success'
+                    : (screenshotAnimation === 'success' || leadProcessingStatus === 'success')
                       ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.15) 50%, transparent 100%)'
-                      : `radial-gradient(circle, ${themeColors.primaryBlue}30 0%, ${themeColors.primaryBlue}15 50%, transparent 100%)`,
+                      : leadProcessingStatus === 'error'
+                        ? 'radial-gradient(circle, rgba(239, 68, 68, 0.3) 0%, rgba(248, 113, 113, 0.15) 50%, transparent 100%)'
+                        : `radial-gradient(circle, ${themeColors.primaryBlue}30 0%, ${themeColors.primaryBlue}15 50%, transparent 100%)`,
                   filter: 'blur(8px)',
-                  animation: screenshotAnimation === 'processing' 
+                  animation: (screenshotAnimation === 'processing' || leadProcessingStatus === 'processing')
                     ? 'ambientPulse 1.8s ease-in-out infinite'
-                    : screenshotAnimation === 'success'
+                    : (screenshotAnimation === 'success' || leadProcessingStatus === 'success')
                       ? 'successGlow 0.6s ease-out'
-                      : 'heartbeat 2s ease-in-out infinite',
+                      : leadProcessingStatus === 'error'
+                        ? 'errorGlow 0.6s ease-out'
+                        : 'heartbeat 2s ease-in-out infinite',
                   animationDelay: '0.5s',
                   pointerEvents: 'none',
                   zIndex: 1

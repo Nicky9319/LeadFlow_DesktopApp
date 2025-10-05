@@ -123,6 +123,69 @@ const ActionBar = () => {
     }
   };
 
+  // Function to show lead processing feedback through floating widget animations
+  const showLeadProcessingFeedback = (status, responseData) => {
+    console.log('🎨 Showing lead processing feedback:', status, responseData);
+    
+    // Set visual feedback on the action bar itself
+    if (status === 'processing') {
+      // Keep processing state active for longer to show background processing
+      setScreenshotStatus('processing');
+      setGlobalShortcutFeedback(true);
+      
+      // Reset after showing processing feedback
+      setTimeout(() => {
+        setScreenshotStatus('success');
+        setTimeout(() => {
+          setScreenshotStatus('ready');
+          setGlobalShortcutFeedback(false);
+        }, 2000);
+      }, 3000); // Show processing for 3 seconds
+      
+    } else if (status === 'success') {
+      setScreenshotStatus('success');
+      setGlobalShortcutFeedback(true);
+      
+      // Reset to ready after success
+      setTimeout(() => {
+        setScreenshotStatus('ready');
+        setGlobalShortcutFeedback(false);
+      }, 2500);
+      
+    } else if (status === 'error') {
+      // Flash red briefly to indicate error
+      setScreenshotStatus('processing'); // Red color
+      setGlobalShortcutFeedback(true);
+      
+      setTimeout(() => {
+        setScreenshotStatus('ready');
+        setGlobalShortcutFeedback(false);
+      }, 2000);
+    }
+    
+    // Send feedback to floating widget if it exists
+    try {
+      if (window && window.electronAPI && window.electronAPI.sendToWidget) {
+        window.electronAPI.sendToWidget('lead-processing-feedback', {
+          status: status,
+          data: responseData,
+          timestamp: new Date().toISOString()
+        });
+        console.log('📤 Sent lead processing feedback to floating widget');
+      } else if (window && window.widgetAPI && window.widgetAPI.sendToMain) {
+        // If we're in the widget context, send to main
+        window.widgetAPI.sendToMain('lead-processing-feedback', {
+          status: status,
+          data: responseData,
+          timestamp: new Date().toISOString()
+        });
+        console.log('📤 Sent lead processing feedback to main window');
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not send feedback to floating widget:', error);
+    }
+  };
+
   // Function to convert base64 image to File and add lead
   const addLeadFromScreenshot = async (imageDataUrl, bucketId, screenshotInfo) => {
     try {
@@ -178,12 +241,15 @@ const ActionBar = () => {
         const successMessage = result.content?.message || result.content?.detail || 'Lead created successfully!';
         console.log('📢 Success message:', successMessage);
         
-        // Handle different success scenarios
+        // Handle different success scenarios with visual feedback
         if (result.status_code === 202) {
           console.log('🔄 Lead is being processed in the background');
-          alert(`✅ ${successMessage}\n\n📋 Details:\n- Request ID: ${result.content?.request_id}\n- File: ${result.content?.filename}\n- Status: ${result.content?.status}`);
+          // Show processing animation on floating widget
+          showLeadProcessingFeedback('processing', result.content);
         } else {
-          alert(`✅ Lead created successfully! ${successMessage}`);
+          console.log('✅ Lead created immediately');
+          // Show success animation on floating widget
+          showLeadProcessingFeedback('success', result.content);
         }
       } else {
         console.error('❌ Failed to create lead - Status:', result.status_code);
@@ -191,7 +257,8 @@ const ActionBar = () => {
         
         const errorMessage = result.content?.detail || result.content?.message || `API returned status ${result.status_code}`;
         console.log('📢 Error message:', errorMessage);
-        alert(`❌ Failed to create lead: ${errorMessage}`);
+        // Show error animation on floating widget
+        showLeadProcessingFeedback('error', result.content);
       }
       
     } catch (error) {
@@ -212,7 +279,8 @@ const ActionBar = () => {
         userFriendlyMessage = error.message;
       }
       
-      alert(`Error creating lead: ${userFriendlyMessage}`);
+      // Show error animation on floating widget
+      showLeadProcessingFeedback('error', { message: userFriendlyMessage });
     }
   };
 

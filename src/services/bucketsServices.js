@@ -1,4 +1,5 @@
-const ipAddress = "http://127.0.0.1:8000";
+// const ipAddress = "http://127.0.0.1:8000";
+const ipAddress = "http://206.189.128.242:8000";
 
 // Small helper to perform fetch and return a consistent shape:
 // { status_code: number, content: any }
