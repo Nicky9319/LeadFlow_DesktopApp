@@ -71,18 +71,26 @@ const ActionBar = () => {
           setScreenshotStatus('ready');
           setGlobalShortcutFeedback(false);
         }, 2500);
-      } else if (eventName === 'screenshot-captured' && payload && payload.success) {
-        console.log('ActionBar: Screenshot captured from button click - processing image data');
+      } else if (eventName === 'screenshot-taken' && payload && payload.success) {
+        console.log('ActionBar: Screenshot taken successfully - processing image data');
         console.log('ActionBar: Received image data for processing:', {
           hasImageData: !!payload.imageData,
           resolution: payload.resolution,
           filePath: payload.filePath
         });
         
+        // Set status to success for button clicks, but keep ready for global shortcuts
+        setScreenshotStatus('success');
+        
         // Process the image data in the overlay
         if (payload.imageData) {
           processScreenshotInOverlay(payload.imageData, payload.resolution, payload.filePath);
         }
+        
+        // Reset to ready after 2 seconds
+        setTimeout(() => {
+          setScreenshotStatus('ready');
+        }, 2000);
       } else if (eventName === 'screenshot-error' && payload && !payload.success) {
         console.log('ActionBar: Global screenshot failed:', payload.error);
         setScreenshotStatus('ready');

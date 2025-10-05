@@ -35,10 +35,14 @@ const FloatingWidget = () => {
         if (eventName === 'screenshot-processing') {
           console.log('FloatingWidget: Screenshot processing - starting animation');
           setScreenshotAnimation('processing');
-                } else if (eventName === 'screenshot-taken' && payload && payload.success) {
-          console.log('FloatingWidget: Global screenshot taken successfully');
-          // Just reset the animation state without showing success animation
-          setScreenshotAnimation(null);
+        } else if (eventName === 'screenshot-taken' && payload && payload.success) {
+          console.log('FloatingWidget: Screenshot taken successfully - showing success animation');
+          setScreenshotAnimation('success');
+          
+          // Reset to idle after success animation duration
+          setTimeout(() => {
+            setScreenshotAnimation('idle');
+          }, 1500);
         } else if (eventName === 'screenshot-error') {
           console.log('FloatingWidget: Screenshot error - reset animation');
           setScreenshotAnimation('idle');

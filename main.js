@@ -634,29 +634,63 @@ async function captureScreenshot() {
 
 ipcMain.handle('capture-and-save-screenshot', async (event) => {
   console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
-  const result = await captureScreenshot();
+  const now = Date.now();
   
-  // If screenshot was successful and widget window exists, send image data to it
-  if (result.success && widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
-    try {
-      console.log('Sending screenshot data to widget window for processing');
-      widgetWindow.window.webContents.send('eventFromMain', {
-        eventName: 'screenshot-captured',
-        payload: {
-          success: true,
-          imageData: result.imageData,
-          resolution: result.resolution,
-          filePath: result.filePath,
-          timestamp: Date.now()
-        }
-      });
-      console.log('Screenshot data sent to widget window successfully');
-    } catch (sendError) {
-      console.warn('Failed to send screenshot data to widget:', sendError);
+  try {
+    // Send processing notification to widget window if it exists (same as global shortcut)
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+      try {
+        console.log('Sending screenshot-processing event to widget window');
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'screenshot-processing',
+          payload: { status: 'processing', timestamp: now }
+        });
+        console.log('Screenshot-processing event sent successfully');
+      } catch (sendError) {
+        console.warn('Failed to send processing notification to widget:', sendError);
+      }
     }
+    
+    const result = await captureScreenshot();
+    
+    // Send success notification with image data to widget window (same as global shortcut)
+    if (result.success && widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+      try {
+        console.log('Sending screenshot-taken event with image data to widget window');
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'screenshot-taken',
+          payload: { 
+            success: true, 
+            timestamp: now,
+            imageData: result.imageData,
+            resolution: result.resolution,
+            filePath: result.filePath
+          }
+        });
+        console.log('Screenshot-taken event with image data sent successfully');
+      } catch (sendError) {
+        console.warn('Failed to send success notification to widget:', sendError);
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Screenshot failed:', error);
+    
+    // Send error notification to widget window if it exists (same as global shortcut)
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+      try {
+        widgetWindow.window.webContents.send('eventFromMain', {
+          eventName: 'screenshot-error',
+          payload: { success: false, error: error.message }
+        });
+      } catch (sendError) {
+        console.warn('Failed to send error notification to widget:', sendError);
+      }
+    }
+    
+    return { success: false, error: error.message };
   }
-  
-  return result;
 });
 
 ipcMain.handle('get-ip-address', async (event) => {
