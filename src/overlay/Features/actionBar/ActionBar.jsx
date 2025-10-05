@@ -51,6 +51,17 @@ const ActionBar = () => {
         console.log('ActionBar: UI state updated to processing');
       } else if (eventName === 'screenshot-taken' && payload && payload.success) {
         console.log('ActionBar: Global screenshot taken successfully - updating UI state');
+        console.log('ActionBar: Received image data for processing:', {
+          hasImageData: !!payload.imageData,
+          resolution: payload.resolution,
+          filePath: payload.filePath
+        });
+        
+        // Process the image data in the overlay
+        if (payload.imageData) {
+          processScreenshotInOverlay(payload.imageData, payload.resolution, payload.filePath);
+        }
+        
         setScreenshotStatus('success');
         setGlobalShortcutFeedback(true);
         console.log('ActionBar: UI state updated to success');
@@ -60,6 +71,18 @@ const ActionBar = () => {
           setScreenshotStatus('ready');
           setGlobalShortcutFeedback(false);
         }, 2500);
+      } else if (eventName === 'screenshot-captured' && payload && payload.success) {
+        console.log('ActionBar: Screenshot captured from button click - processing image data');
+        console.log('ActionBar: Received image data for processing:', {
+          hasImageData: !!payload.imageData,
+          resolution: payload.resolution,
+          filePath: payload.filePath
+        });
+        
+        // Process the image data in the overlay
+        if (payload.imageData) {
+          processScreenshotInOverlay(payload.imageData, payload.resolution, payload.filePath);
+        }
       } else if (eventName === 'screenshot-error' && payload && !payload.success) {
         console.log('ActionBar: Global screenshot failed:', payload.error);
         setScreenshotStatus('ready');
@@ -69,6 +92,63 @@ const ActionBar = () => {
       }
     } catch (err) {
       console.error('Error applying IPC event payload:', err);
+    }
+  };
+
+  // Function to process screenshot image data in the overlay
+  const processScreenshotInOverlay = (imageData, resolution, filePath) => {
+    console.log('ActionBar: Processing screenshot in overlay', {
+      imageSize: imageData ? imageData.length : 'No image data',
+      resolution,
+      filePath
+    });
+    
+    try {
+      // Create an image element to work with the screenshot
+      const img = new Image();
+      img.onload = () => {
+        console.log('ActionBar: Image loaded successfully for processing', {
+          width: img.width,
+          height: img.height
+        });
+        
+        // Here you can add your image processing logic
+        // For example:
+        // - Create a canvas to draw the image
+        // - Apply filters or overlays
+        // - Extract specific regions
+        // - Perform OCR or object detection
+        // - Add annotations or highlights
+        
+        // Example: Create a canvas for processing
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the original image
+        ctx.drawImage(img, 0, 0);
+        
+        // Example processing: Add a semi-transparent overlay
+        ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // You can now use the processed canvas data
+        const processedImageData = canvas.toDataURL('image/png');
+        console.log('ActionBar: Image processing completed');
+        
+        // Store processed image or trigger further actions
+        // For example, you could dispatch an action to store the processed image
+        // or send it back to the main process for saving
+        
+      };
+      img.onerror = (error) => {
+        console.error('ActionBar: Failed to load image for processing:', error);
+      };
+      img.src = imageData;
+      
+    } catch (error) {
+      console.error('ActionBar: Error processing screenshot image:', error);
     }
   };
 
@@ -189,6 +269,12 @@ const ActionBar = () => {
       try {
         const result = await screenshotAPI.captureAndSaveScreenshot();
         console.log('Screenshot captured and saved successfully.', result);
+        
+        // Process the image data directly from the IPC response
+        if (result.success && result.imageData) {
+          console.log('ActionBar: Processing image data from button click');
+          processScreenshotInOverlay(result.imageData, result.resolution, result.filePath);
+        }
         
         // Set status to success (green)
         setScreenshotStatus('success');

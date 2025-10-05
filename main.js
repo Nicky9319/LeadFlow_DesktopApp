@@ -531,15 +531,21 @@ async function handleGlobalScreenshot() {
     
     const result = await captureScreenshot();
     
-    // Send success notification to widget window if it exists
+    // Send success notification with image data to widget window if it exists
     if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
-        console.log('Sending screenshot-taken event to widget window');
+        console.log('Sending screenshot-taken event with image data to widget window');
         widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-taken',
-          payload: { success: true, timestamp: now }
+          payload: { 
+            success: true, 
+            timestamp: now,
+            imageData: result.imageData,
+            resolution: result.resolution,
+            filePath: result.filePath
+          }
         });
-        console.log('Screenshot-taken event sent successfully');
+        console.log('Screenshot-taken event with image data sent successfully');
       } catch (sendError) {
         console.warn('Failed to send success notification to widget:', sendError);
       }
@@ -609,7 +615,17 @@ async function captureScreenshot() {
     fs.writeFileSync(filePath, buffer);
     console.log(`[Screenshot] Screenshot saved at: ${filePath}`);
     
-    return { success: true, filePath, resolution: actualSize };
+    // Convert buffer to base64 for sending to overlay window
+    const base64Image = buffer.toString('base64');
+    const imageDataUrl = `data:image/png;base64,${base64Image}`;
+    
+    return { 
+      success: true, 
+      filePath, 
+      resolution: actualSize,
+      imageData: imageDataUrl,
+      buffer: buffer
+    };
   } catch (err) {
     console.error('[Screenshot] Failed to capture or save screenshot:', err);
     return { success: false, error: err.message };
@@ -618,7 +634,29 @@ async function captureScreenshot() {
 
 ipcMain.handle('capture-and-save-screenshot', async (event) => {
   console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
-  return await captureScreenshot();
+  const result = await captureScreenshot();
+  
+  // If screenshot was successful and widget window exists, send image data to it
+  if (result.success && widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
+    try {
+      console.log('Sending screenshot data to widget window for processing');
+      widgetWindow.window.webContents.send('eventFromMain', {
+        eventName: 'screenshot-captured',
+        payload: {
+          success: true,
+          imageData: result.imageData,
+          resolution: result.resolution,
+          filePath: result.filePath,
+          timestamp: Date.now()
+        }
+      });
+      console.log('Screenshot data sent to widget window successfully');
+    } catch (sendError) {
+      console.warn('Failed to send screenshot data to widget:', sendError);
+    }
+  }
+  
+  return result;
 });
 
 ipcMain.handle('get-ip-address', async (event) => {
