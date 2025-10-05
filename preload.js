@@ -43,6 +43,7 @@ if (process.contextIsolated) {
       captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
       validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
       proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
+      getScreenshotProcessStatus: () => ipcRenderer.invoke('get-screenshot-process-status'),
       // Open external URLs
       openExternal: (url) => ipcRenderer.invoke('open-external', url),
     });
@@ -75,6 +76,7 @@ if (process.contextIsolated) {
       captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
       validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
       proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
+      getScreenshotProcessStatus: () => ipcRenderer.invoke('get-screenshot-process-status'),
     });
 
   }
@@ -143,5 +145,6 @@ else{
     captureAndSaveScreenshot: () => ipcRenderer.invoke('capture-and-save-screenshot'),
     validateAndCaptureScreenshot: () => ipcRenderer.invoke('validate-and-capture-screenshot'),
     proceedWithScreenshot: (source) => ipcRenderer.invoke('proceed-with-screenshot', source),
+    getScreenshotProcessStatus: () => ipcRenderer.invoke('get-screenshot-process-status'),
   }
 }

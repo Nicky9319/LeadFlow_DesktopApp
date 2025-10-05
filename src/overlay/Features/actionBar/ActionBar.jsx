@@ -342,6 +342,13 @@ const ActionBar = () => {
       buckets: buckets
     });
     
+    // Check if screenshot process is already active
+    if (screenshotStatus === 'processing') {
+      console.log('ActionBar: Screenshot already in progress, ignoring button click');
+      alert('Screenshot is already in progress. Please wait for it to complete.');
+      return;
+    }
+    
     // Check if a valid option is selected
     if (!selectedOption || selectedOption === 'Select Option') {
       console.log('ActionBar: No valid option selected from button, auto-selecting first available option');

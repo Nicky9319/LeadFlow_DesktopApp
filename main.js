@@ -38,6 +38,8 @@ let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
 let lastScreenshotTime = 0; // Cooldown tracking for global shortcut
+let lastValidationRequestTime = 0; // Cooldown tracking for screenshot validation requests
+let screenshotProcessActive = false; // Track if screenshot process is currently active
 
 // Configure auto-updater logging
 autoUpdater.logger = log;
@@ -527,6 +529,10 @@ async function handleGlobalScreenshot() {
   
   lastScreenshotTime = now;
   
+  // Mark screenshot process as active
+  screenshotProcessActive = true;
+  console.log('Screenshot process started - marking as active');
+  
   try {
     // Send processing notification to widget window if it exists
     if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
@@ -596,6 +602,10 @@ async function handleGlobalScreenshot() {
     }
     
     return null;
+  } finally {
+    // Mark screenshot process as inactive
+    screenshotProcessActive = false;
+    console.log('Screenshot process completed - marking as inactive');
   }
 }
 
@@ -656,6 +666,10 @@ ipcMain.handle('capture-and-save-screenshot', async (event) => {
   console.log('[Screenshot] capture-and-save-screenshot IPC handler called.');
   const now = Date.now();
   
+  // Mark screenshot process as active
+  screenshotProcessActive = true;
+  console.log('Screenshot process started - marking as active');
+  
   try {
     // Send processing notification to widget window if it exists (same as global shortcut)
     if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
@@ -710,6 +724,10 @@ ipcMain.handle('capture-and-save-screenshot', async (event) => {
     }
     
     return { success: false, error: error.message };
+  } finally {
+    // Mark screenshot process as inactive
+    screenshotProcessActive = false;
+    console.log('Screenshot process completed - marking as inactive');
   }
 });
 
@@ -740,6 +758,11 @@ ipcMain.handle('validate-and-capture-screenshot', async (event) => {
 ipcMain.handle('proceed-with-screenshot', async (event, source) => {
   console.log(`[Screenshot] proceed-with-screenshot called from ${source}`);
   return await handleGlobalScreenshot();
+});
+
+// IPC handler to check if screenshot process is active
+ipcMain.handle('get-screenshot-process-status', async (event) => {
+  return { active: screenshotProcessActive };
 });
 
 ipcMain.handle('get-ip-address', async (event) => {
@@ -2644,13 +2667,49 @@ app.whenReady().then(async () => {
   // Screenshot shortcut (Ctrl + 1)
   globalShortcut.register('CommandOrControl+1', () => {
     logger.debug('Screenshot shortcut Ctrl+1 pressed');
+    
+    const now = Date.now();
+    const cooldownTime = 1500; // 1.5 seconds cooldown
+    
+    // Check if screenshot process is currently active
+    if (screenshotProcessActive) {
+      console.log('Screenshot process already active, showing dialog');
+      logger.debug('Screenshot process is active, cannot start new screenshot');
+      
+      // Show dialog to user
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.executeJavaScript(`
+          alert('Screenshot is already in progress. Please wait for it to complete before taking another screenshot.');
+        `).catch(err => console.warn('Failed to show screenshot active dialog:', err));
+      }
+      return;
+    }
+    
+    // Check cooldown period
+    if (now - lastValidationRequestTime < cooldownTime) {
+      console.log('Screenshot validation request on cooldown, showing dialog');
+      logger.debug(`Screenshot validation cooldown active. Time remaining: ${cooldownTime - (now - lastValidationRequestTime)}ms`);
+      
+      // Show dialog to user about cooldown
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const remainingTime = Math.ceil((cooldownTime - (now - lastValidationRequestTime)) / 1000);
+        mainWindow.webContents.executeJavaScript(`
+          alert('Please wait ${remainingTime} more second(s) before taking another screenshot.');
+        `).catch(err => console.warn('Failed to show cooldown dialog:', err));
+      }
+      return;
+    }
+    
+    // Update last validation request time
+    lastValidationRequestTime = now;
+    
     // Send validation request to overlay window instead of directly taking screenshot
     if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
         console.log('Sending screenshot validation request to widget window from global shortcut');
         widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'validate-screenshot-request',
-          payload: { source: 'global-shortcut', timestamp: Date.now() }
+          payload: { source: 'global-shortcut', timestamp: now }
         });
       } catch (sendError) {
         console.warn('Failed to send validation request to widget from global shortcut:', sendError);
