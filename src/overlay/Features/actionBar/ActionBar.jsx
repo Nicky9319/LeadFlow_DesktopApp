@@ -127,41 +127,8 @@ const ActionBar = () => {
   const showLeadProcessingFeedback = (status, responseData) => {
     console.log('🎨 Showing lead processing feedback:', status, responseData);
     
-    // Set visual feedback on the action bar itself
-    if (status === 'processing') {
-      // Keep processing state active for longer to show background processing
-      setScreenshotStatus('processing');
-      setGlobalShortcutFeedback(true);
-      
-      // Reset after showing processing feedback
-      setTimeout(() => {
-        setScreenshotStatus('success');
-        setTimeout(() => {
-          setScreenshotStatus('ready');
-          setGlobalShortcutFeedback(false);
-        }, 2000);
-      }, 3000); // Show processing for 3 seconds
-      
-    } else if (status === 'success') {
-      setScreenshotStatus('success');
-      setGlobalShortcutFeedback(true);
-      
-      // Reset to ready after success
-      setTimeout(() => {
-        setScreenshotStatus('ready');
-        setGlobalShortcutFeedback(false);
-      }, 2500);
-      
-    } else if (status === 'error') {
-      // Flash red briefly to indicate error
-      setScreenshotStatus('processing'); // Red color
-      setGlobalShortcutFeedback(true);
-      
-      setTimeout(() => {
-        setScreenshotStatus('ready');
-        setGlobalShortcutFeedback(false);
-      }, 2000);
-    }
+    // Note: State changes removed - only button click flow manages visual state
+    // This function now only handles floating widget communication
     
     // Send feedback to floating widget if it exists
     try {
