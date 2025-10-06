@@ -560,7 +560,15 @@ async function handleGlobalScreenshot() {
     // Send success notification with image data to widget window if it exists
     if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed() && widgetWindow.window.webContents) {
       try {
-        console.log('Sending screenshot-taken event with image data to widget window');
+        const hasImageData = !!result.imageData;
+        const imageSize = result.imageData ? result.imageData.length : 0;
+        
+        console.log(`[Screenshot] Sending screenshot-taken event to widget - Has image data: ${hasImageData}, Size: ${result.base64SizeKB} KB`);
+        logger.info('Sending screenshot to overlay window', { 
+          hasImageData, 
+          imageSizeKB: result.base64SizeKB
+        });
+        
         widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-taken',
           payload: { 
@@ -568,13 +576,18 @@ async function handleGlobalScreenshot() {
             timestamp: now,
             imageData: result.imageData,
             resolution: result.resolution,
-            filePath: result.filePath
+            imageSizeKB: result.imageSizeKB
           }
         });
-        console.log('Screenshot-taken event with image data sent successfully');
+        console.log('[Screenshot] screenshot-taken event sent successfully');
         
         // Send detailed image processing event
-        console.log('Sending screenshot-image-captured event for detailed processing');
+        console.log('[Screenshot] Sending screenshot-image-captured event for detailed processing');
+        logger.debug('Sending detailed screenshot event', {
+          hasImageData,
+          resolution: result.resolution
+        });
+        
         widgetWindow.window.webContents.send('eventFromMain', {
           eventName: 'screenshot-image-captured',
           payload: {
@@ -586,13 +599,20 @@ async function handleGlobalScreenshot() {
             },
             imageDataUrl: result.imageData,
             resolution: result.resolution,
-            filePath: result.filePath,
-            captureMethod: 'global-shortcut'
+            captureMethod: 'global-shortcut',
+            imageSizeKB: result.imageSizeKB,
+            base64SizeKB: result.base64SizeKB
           }
         });
-        console.log('Screenshot-image-captured event sent for detailed processing');
+        console.log('[Screenshot] screenshot-image-captured event sent successfully');
+        logger.info('Screenshot events sent to overlay successfully');
       } catch (sendError) {
-        console.warn('Failed to send success notification to widget:', sendError);
+        console.error('[Screenshot] ❌ Failed to send screenshot to widget:', sendError);
+        logger.error('Failed to send screenshot to overlay', { 
+          error: sendError.message, 
+          stack: sendError.stack,
+          imageSizeKB: result.base64SizeKB
+        });
       }
     } else {
       console.warn('Widget window not available for success notification:', {
@@ -657,26 +677,34 @@ async function captureScreenshot() {
     console.log(`[Screenshot] Captured image size: ${actualSize.width}x${actualSize.height}`);
     const buffer = image.toPNG();
     
-    // Save to local directory (same as main.js)
-    const screenshotDir = __dirname;
-    const fileName = `screenshot_${Date.now()}.png`;
-    const filePath = path.join(screenshotDir, fileName);
-    fs.writeFileSync(filePath, buffer);
-    console.log(`[Screenshot] Screenshot saved at: ${filePath}`);
-    
     // Convert buffer to base64 for sending to overlay window
     const base64Image = buffer.toString('base64');
     const imageDataUrl = `data:image/png;base64,${base64Image}`;
     
+    // Log image data size for debugging production issues
+    const imageSizeKB = (buffer.length / 1024).toFixed(2);
+    const base64SizeKB = (imageDataUrl.length / 1024).toFixed(2);
+    console.log(`[Screenshot] Image sizes - Original: ${imageSizeKB} KB, Base64: ${base64SizeKB} KB`);
+    logger.info(`Screenshot captured - Original: ${imageSizeKB} KB, Base64: ${base64SizeKB} KB, Resolution: ${actualSize.width}x${actualSize.height}`);
+    
+    // For very large images (>50MB base64), we might need to implement chunking in the future
+    // For now, we'll try to send all images directly since we're not saving to disk
+    const maxSafeSize = 50 * 1024 * 1024; // 50MB threshold for warning
+    if (imageDataUrl.length > maxSafeSize) {
+      logger.warn(`Screenshot base64 size (${base64SizeKB} KB) is very large. May cause IPC performance issues.`);
+      console.warn(`[Screenshot] ⚠️ Large image (${base64SizeKB} KB). Monitor for performance issues.`);
+    }
+    
     return { 
       success: true, 
-      filePath, 
       resolution: actualSize,
       imageData: imageDataUrl,
-      buffer: buffer
+      imageSizeKB: parseFloat(imageSizeKB),
+      base64SizeKB: parseFloat(base64SizeKB)
     };
   } catch (err) {
     console.error('[Screenshot] Failed to capture or save screenshot:', err);
+    logger.error('Screenshot capture failed', { error: err.message, stack: err.stack });
     return { success: false, error: err.message };
   }
 }
@@ -803,6 +831,8 @@ ipcMain.handle('get-screenshot-process-status', async (event) => {
   return { active: screenshotProcessActive };
 });
 
+
+
 ipcMain.handle('get-ip-address', async (event) => {
 });
 
@@ -853,6 +883,30 @@ ipcMain.handle('window:close', () => {
   if (mainWindow) {
     mainWindow.hide();
   }
+});
+
+// Renderer process logging
+ipcMain.handle('renderer-log', async (event, level, component, message, data = null) => {
+  const logMessage = `[RENDERER:${component}] ${message}`;
+  
+  switch (level) {
+    case 'info':
+      logger.info(logMessage, data || '');
+      break;
+    case 'debug':
+      logger.debug(logMessage, data || '');
+      break;
+    case 'warn':
+      logger.warn(logMessage, data || '');
+      break;
+    case 'error':
+      logger.error(logMessage, data || '');
+      break;
+    default:
+      logger.info(logMessage, data || '');
+  }
+  
+  return { success: true };
 });
 
 // Open external URLs

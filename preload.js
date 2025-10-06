@@ -22,6 +22,8 @@ if (process.contextIsolated) {
       setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
       setupContinue: () => ipcRenderer.invoke('setup:continue'),
       finalizingAgent: () => ipcRenderer.invoke('finalizing-agent'),
+      // Logging API
+      logToMain: (level, component, message, data) => ipcRenderer.invoke('renderer-log', level, component, message, data),
       // WSL Setup APIs
       checkWSL: () => ipcRenderer.invoke('checkWSL'),
       installWSL: () => ipcRenderer.invoke('installWSL'),
@@ -97,6 +99,8 @@ else{
     setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
     setupContinue: () => ipcRenderer.invoke('setup:continue'),
     finalizingAgent: () => ipcRenderer.invoke('finalizing-agent'),
+    // Logging API
+    logToMain: (level, component, message, data) => ipcRenderer.invoke('renderer-log', level, component, message, data),
     // WSL Setup APIs
     checkWSL: () => ipcRenderer.invoke('checkWSL'),
     installWSL: () => ipcRenderer.invoke('installWSL'),

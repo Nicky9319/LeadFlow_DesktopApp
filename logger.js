@@ -35,7 +35,7 @@ class Logger {
     
     // Set log file path only in Electron environment
     if (process.versions && process.versions.electron) {
-      const logDir = path.join(process.env.APPDATA || process.env.HOME || '.', 'DonnaAI', 'logs');
+      const logDir = path.join(process.env.APPDATA || process.env.HOME || '.', 'LeadFlow', 'logs');
       if (!fs.existsSync(logDir)) {
         fs.mkdirSync(logDir, { recursive: true });
       }

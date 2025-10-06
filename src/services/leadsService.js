@@ -1,6 +1,10 @@
 // const ipAddress = "http://127.0.0.1:8000";
 const ipAddress = "http://206.189.128.242:8000";
 
+// Import renderer logger
+import { createLogger } from '../utils/rendererLogger';
+const logger = createLogger('LeadsService');
+
 // Small helper to perform fetch and return a consistent shape:
 // { status_code: number, content: any }
 const request = async (path, options = {}) => {
@@ -11,6 +15,7 @@ const request = async (path, options = {}) => {
   };
 
   try {
+    logger.debug(`Making ${options.method || 'GET'} request to: ${url}`);
     const resp = await fetch(url, fetchOptions);
     let content;
     try {
@@ -20,9 +25,11 @@ const request = async (path, options = {}) => {
       content = { detail: await resp.text() };
     }
 
+    logger.debug(`Response from ${url}:`, { status: resp.status, content });
     return { status_code: resp.status, content };
   } catch (error) {
     console.error('Network error while calling', url, error);
+    logger.error(`Network error while calling ${url}`, { error: error.message, stack: error.stack });
     // Keep a consistent return shape for network errors
     return { status_code: 503, content: { detail: String(error) } };
   }
@@ -30,28 +37,45 @@ const request = async (path, options = {}) => {
 
 // Get all leads, optionally filtered by bucket_id
 const getAllLeads = async (bucketId = null) => {
+  logger.info('getAllLeads called', { bucketId });
+  
   const params = new URLSearchParams();
   if (bucketId) {
     params.append('bucket_id', bucketId);
   }
   
   const path = `/api/main-service/leads/get-all-leads${params.toString() ? '?' + params.toString() : ''}`;
+  logger.debug('getAllLeads: Making request', { path });
   const resp = await request(path, { method: 'GET' });
 
   if (!resp || resp.status_code !== 200) {
     console.error('Failed to fetch leads or non-200 response:', resp);
+    logger.error('getAllLeads: Failed to fetch leads', { status: resp?.status_code, content: resp?.content });
     return [];
   }
 
   const content = resp.content;
 
   // Normalize common response shapes to an array of leads
-  if (Array.isArray(content)) return normalizeLeads(content);
-  if (content && Array.isArray(content.leads)) return normalizeLeads(content.leads);
-  if (content && Array.isArray(content.content)) return normalizeLeads(content.content);
-  if (content && Array.isArray(content.data)) return normalizeLeads(content.data);
+  if (Array.isArray(content)) {
+    logger.debug('getAllLeads: Response is array', { count: content.length });
+    return normalizeLeads(content);
+  }
+  if (content && Array.isArray(content.leads)) {
+    logger.debug('getAllLeads: Response has leads array', { count: content.leads.length });
+    return normalizeLeads(content.leads);
+  }
+  if (content && Array.isArray(content.content)) {
+    logger.debug('getAllLeads: Response has content array', { count: content.content.length });
+    return normalizeLeads(content.content);
+  }
+  if (content && Array.isArray(content.data)) {
+    logger.debug('getAllLeads: Response has data array', { count: content.data.length });
+    return normalizeLeads(content.data);
+  }
 
   console.warn('Unexpected leads response shape, returning empty list:', content);
+  logger.warn('getAllLeads: Unexpected response shape', { content });
   return [];
 };
 
@@ -116,9 +140,16 @@ const addLead = async (imageFile, bucketId = null) => {
     fileType: imageFile?.type,
     bucketId: bucketId
   });
+  logger.info('addLead called', { 
+    fileName: imageFile?.name, 
+    fileSize: imageFile?.size, 
+    fileType: imageFile?.type, 
+    bucketId 
+  });
 
   if (!imageFile) {
     console.error('❌ leadsService.addLead: No image file provided');
+    logger.error('addLead: No image file provided');
     return { status_code: 400, content: { detail: 'Image file is required' } };
   }
 
@@ -131,10 +162,12 @@ const addLead = async (imageFile, bucketId = null) => {
     if (bucketId) {
       formData.append('bucket_id', bucketId);
       console.log('✅ leadsService.addLead: Added bucket_id to FormData:', bucketId);
+      logger.debug('addLead: Added bucket_id to FormData', { bucketId });
     }
 
     const url = `${ipAddress}/api/main-service/leads/add-lead`;
     console.log('📤 leadsService.addLead: Making request to:', url);
+    logger.debug('addLead: Making POST request', { url });
     
     const fetchOptions = {
       method: 'POST',
@@ -143,27 +176,34 @@ const addLead = async (imageFile, bucketId = null) => {
     };
 
     console.log('⏳ leadsService.addLead: Sending request...');
+    logger.debug('addLead: Sending request...');
     const resp = await fetch(url, fetchOptions);
     console.log('📥 leadsService.addLead: Response received - Status:', resp.status, 'OK:', resp.ok);
+    logger.debug('addLead: Response received', { status: resp.status, ok: resp.ok });
     
     let content;
     try {
       content = await resp.json();
       console.log('✅ leadsService.addLead: JSON response parsed:', content);
+      logger.debug('addLead: JSON response parsed', content);
     } catch (err) {
       // Non-JSON response
       console.log('⚠️ leadsService.addLead: Non-JSON response, getting text...');
+      logger.warn('addLead: Non-JSON response, getting text');
       const textContent = await resp.text();
       console.log('📄 leadsService.addLead: Text response:', textContent);
+      logger.debug('addLead: Text response', { textContent });
       content = { detail: textContent };
     }
 
     const result = { status_code: resp.status, content };
     console.log('🔙 leadsService.addLead: Returning result:', result);
+    logger.info('addLead: Completed', { status: resp.status, success: resp.status === 200 });
     return result;
   } catch (error) {
     console.error('💥 leadsService.addLead: Network error:', error);
     console.error('💥 leadsService.addLead: Error stack:', error.stack);
+    logger.error('addLead: Network error', { error: error.message, stack: error.stack });
     return { status_code: 503, content: { detail: String(error) } };
   }
 };
@@ -174,14 +214,17 @@ const deleteLead = async (leadId, bucketId = null) => {
     leadId: leadId,
     bucketId: bucketId
   });
+  logger.info('deleteLead called', { leadId, bucketId });
 
   if (!leadId) {
     console.error('❌ leadsService.deleteLead: No leadId provided');
+    logger.error('deleteLead: No leadId provided');
     return { status_code: 400, content: { detail: 'lead_id is required' } };
   }
 
   try {
     console.log('📤 leadsService.deleteLead: Attempting JSON body approach...');
+    logger.debug('deleteLead: Attempting JSON body approach');
     
     // Try with JSON body first (as your backend supports both)
     const body = { lead_id: leadId };
@@ -190,6 +233,7 @@ const deleteLead = async (leadId, bucketId = null) => {
     }
 
     console.log('📤 leadsService.deleteLead: Making request with body:', body);
+    logger.debug('deleteLead: Making DELETE request with body', body);
 
     let resp = await request('/api/main-service/leads/delete-lead', {
       method: 'DELETE',
@@ -197,10 +241,12 @@ const deleteLead = async (leadId, bucketId = null) => {
     });
 
     console.log('📥 leadsService.deleteLead: JSON body response:', resp);
+    logger.debug('deleteLead: JSON body response received', { status: resp.status_code, content: resp.content });
 
     // If JSON body approach fails with 404, try query parameters
     if (resp.status_code === 404) {
       console.log('⚠️ leadsService.deleteLead: JSON body failed with 404, trying query params...');
+      logger.warn('deleteLead: JSON body approach failed with 404, trying query params');
       
       const params = new URLSearchParams();
       params.append('lead_id', leadId);
@@ -210,14 +256,18 @@ const deleteLead = async (leadId, bucketId = null) => {
 
       const path = `/api/main-service/leads/delete-lead?${params.toString()}`;
       console.log('📤 leadsService.deleteLead: Making request with query params to:', path);
+      logger.debug('deleteLead: Making DELETE request with query params', { path });
       
       resp = await request(path, { method: 'DELETE' });
       console.log('📥 leadsService.deleteLead: Query params response:', resp);
+      logger.debug('deleteLead: Query params response received', { status: resp.status_code, content: resp.content });
     }
 
+    logger.info('deleteLead: Completed', { status: resp.status_code, success: resp.status_code === 200 });
     return resp;
   } catch (error) {
     console.error('💥 leadsService.deleteLead: Error:', error);
+    logger.error('deleteLead: Exception caught', { error: error.message, stack: error.stack });
     return { status_code: 503, content: { detail: String(error) } };
   }
 };

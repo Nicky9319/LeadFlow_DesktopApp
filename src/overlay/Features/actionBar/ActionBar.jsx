@@ -76,7 +76,7 @@ const ActionBar = () => {
         
         // Process the image data in the overlay
         if (payload.imageData) {
-          processScreenshotInOverlay(payload.imageData, payload.resolution, payload.filePath);
+          processScreenshotInOverlay(payload.imageData, payload.resolution);
         }
         
         setScreenshotStatus('success');
@@ -101,7 +101,7 @@ const ActionBar = () => {
         
         // Process the image data in the overlay
         if (payload.imageData) {
-          processScreenshotInOverlay(payload.imageData, payload.resolution, payload.filePath);
+          processScreenshotInOverlay(payload.imageData, payload.resolution);
         }
         
         // Reset to ready after 2 seconds
@@ -400,16 +400,15 @@ const ActionBar = () => {
     
     // Also call the existing processing function for any additional processing
     if (payload.imageDataUrl) {
-      processScreenshotInOverlay(payload.imageDataUrl, payload.resolution, payload.filePath);
+      processScreenshotInOverlay(payload.imageDataUrl, payload.resolution);
     }
   };
 
   // Function to process screenshot image data in the overlay
-  const processScreenshotInOverlay = (imageData, resolution, filePath) => {
+  const processScreenshotInOverlay = (imageData, resolution) => {
     console.log('ActionBar: Processing screenshot in overlay', {
       imageSize: imageData ? imageData.length : 'No image data',
-      resolution,
-      filePath
+      resolution
     });
     
     try {
@@ -755,7 +754,7 @@ const ActionBar = () => {
         // Process the image data directly from the IPC response
         if (result.success && result.imageData) {
           console.log('ActionBar: Processing image data from button click');
-          processScreenshotInOverlay(result.imageData, result.resolution, result.filePath);
+          processScreenshotInOverlay(result.imageData, result.resolution);
         }
         
         // Set status to success (green)
