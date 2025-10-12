@@ -3,6 +3,30 @@ import React, { useRef, useEffect } from 'react'
 // Global state to coordinate multiple HoverComponent instances
 let globalHoverCount = 0
 let globalDisableTimeout = null
+let globalClickTimeout = null
+
+// Global function to force click-through restoration (useful for dropdown interactions)
+window.forceClickThroughRestore = () => {
+	if (globalClickTimeout) {
+		clearTimeout(globalClickTimeout)
+		globalClickTimeout = null
+	}
+	if (globalDisableTimeout) {
+		clearTimeout(globalDisableTimeout)
+		globalDisableTimeout = null
+	}
+	
+	// Only disable interaction if no components are currently hovered
+	if (globalHoverCount === 0) {
+		try {
+			if (window.electronAPI?.setIgnoreMouseEvents) {
+				window.electronAPI.setIgnoreMouseEvents(true);
+			}
+		} catch (error) {
+			console.error('Error forcing click-through restore:', error);
+		}
+	}
+}
 
 // Makes wrapped region clickable even when the window is globally click-through
 // by enabling interaction on hover and disabling it when the pointer leaves.
@@ -44,6 +68,10 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 						clearTimeout(globalDisableTimeout)
 						globalDisableTimeout = null
 					}
+					if (globalClickTimeout) {
+						clearTimeout(globalClickTimeout)
+						globalClickTimeout = null
+					}
 					disableInteraction()
 				}
 			}
@@ -55,6 +83,12 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 		if (globalDisableTimeout) {
 			clearTimeout(globalDisableTimeout)
 			globalDisableTimeout = null
+		}
+		
+		// Clear any pending click timeout
+		if (globalClickTimeout) {
+			clearTimeout(globalClickTimeout)
+			globalClickTimeout = null
 		}
 
 		// Increment this instance's hover depth
@@ -81,6 +115,12 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 			
 			// If no instances are hovered globally, disable interaction after delay
 			if (globalHoverCount === 0) {
+				// Clear any existing click timeout since we're leaving hover
+				if (globalClickTimeout) {
+					clearTimeout(globalClickTimeout)
+					globalClickTimeout = null
+				}
+				
 				// Small delay prevents flicker when moving between components
 				globalDisableTimeout = setTimeout(() => {
 					disableInteraction()
@@ -99,10 +139,26 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 		// Ensure we are interactive when clicked
 		enableInteraction()
 		
+		// Clear any existing click timeout
+		if (globalClickTimeout) {
+			clearTimeout(globalClickTimeout)
+			globalClickTimeout = null
+		}
+		
 		// Call the onClick callback if provided
 		if (onClick && typeof onClick === 'function') {
 			onClick(e)
 		}
+		
+		// Set a timeout to restore click-through behavior after click interactions
+		// This is especially important for dropdown interactions
+		globalClickTimeout = setTimeout(() => {
+			// Only disable interaction if no components are currently hovered
+			if (globalHoverCount === 0) {
+				disableInteraction()
+			}
+			globalClickTimeout = null
+		}, 150) // Increased timeout to allow for dropdown interactions
 	}
 
 	return (

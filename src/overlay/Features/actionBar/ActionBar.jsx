@@ -15,9 +15,8 @@ const ActionBar = () => {
   
   const [selectedOption, setSelectedOption] = useState('Select Option');
   const [selectedBucketId, setSelectedBucketId] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentBucketIndex, setCurrentBucketIndex] = useState(0);
   const [screenshotStatus, setScreenshotStatus] = useState('ready'); // 'ready', 'processing', 'success'
-  const dropdownRef = useRef(null);
   const [globalShortcutFeedback, setGlobalShortcutFeedback] = useState(false);
   
   // Local state for buckets to ensure they're always available
@@ -31,18 +30,17 @@ const ActionBar = () => {
   const bucketIdsRef = useRef([]);
   const selectedOptionRef = useRef('Select Option');
   const selectedBucketIdRef = useRef(null);
+  const currentBucketIndexRef = useRef(0);
   
   const position = floatingWidgetPosition || { x: 1200, y: 20 };
-  const isNearRightEdge = position.x > window.innerWidth - 300;
-  const barWidth = 200;
+  const isNearRightEdge = position.x > window.innerWidth - 250;
+  const barWidth = 160;
   const safeLeft = isNearRightEdge ?
     Math.max(10, position.x - barWidth - 20) :
     Math.min(window.innerWidth - barWidth - 10, position.x + 60);
 
-  const dropdownOptions = localBuckets.map(bucket => bucket.name);
-  
   // Debug logging
-  console.log('ActionBar current buckets (Redux):', buckets, 'localBuckets:', localBuckets, 'dropdownOptions:', dropdownOptions);
+  console.log('ActionBar current buckets (Redux):', buckets, 'localBuckets:', localBuckets, 'currentBucketIndex:', currentBucketIndex);
 
   // Event handler function (moved outside useEffect for testability)
   const onBucketsUpdated = (event, data) => {
@@ -437,7 +435,7 @@ const ActionBar = () => {
       localBucketsLength: localBuckets.length,
       buckets: buckets,
       localBuckets: localBuckets,
-      dropdownOptions: dropdownOptions
+      currentBucketIndex: currentBucketIndex
     });
     
     // Check if a valid option is selected
@@ -617,9 +615,11 @@ const ActionBar = () => {
       if (buckets.length > 0 && selectedOption === 'Select Option') {
         setSelectedOption(buckets[0].name);
         setSelectedBucketId(buckets[0].id);
+        setCurrentBucketIndex(0);
         selectedOptionRef.current = buckets[0].name;
         selectedBucketIdRef.current = buckets[0].id;
-        console.log('ActionBar: Set default selection to:', buckets[0].name, 'with ID:', buckets[0].id);
+        currentBucketIndexRef.current = 0;
+        console.log('ActionBar: Set default selection to:', buckets[0].name, 'with ID:', buckets[0].id, 'at index 0');
       }
     } else {
       console.log('ActionBar: Clearing local bucket state - no buckets available');
@@ -632,24 +632,46 @@ const ActionBar = () => {
     }
   }, [buckets, selectedOption]);
 
-  const handleOptionSelect = (option) => {
-    setSelectedOption(option);
-    setIsDropdownOpen(false);
-    selectedOptionRef.current = option;
+  // Navigation functions for bucket selection
+  const handlePreviousBucket = () => {
+    if (localBuckets.length === 0) return;
     
-    // Find and set the corresponding bucket ID
-    const selectedBucket = localBuckets.find(bucket => bucket.name === option);
+    const newIndex = currentBucketIndex > 0 ? currentBucketIndex - 1 : localBuckets.length - 1;
+    setCurrentBucketIndex(newIndex);
+    currentBucketIndexRef.current = newIndex;
+    
+    const selectedBucket = localBuckets[newIndex];
     if (selectedBucket) {
+      setSelectedOption(selectedBucket.name);
       setSelectedBucketId(selectedBucket.id);
+      selectedOptionRef.current = selectedBucket.name;
       selectedBucketIdRef.current = selectedBucket.id;
-      console.log('ActionBar: Selected bucket:', {
+      console.log('ActionBar: Previous bucket selected:', {
         name: selectedBucket.name,
-        id: selectedBucket.id
+        id: selectedBucket.id,
+        index: newIndex
       });
-    } else {
-      setSelectedBucketId(null);
-      selectedBucketIdRef.current = null;
-      console.log('ActionBar: No bucket found for selected option:', option);
+    }
+  };
+
+  const handleNextBucket = () => {
+    if (localBuckets.length === 0) return;
+    
+    const newIndex = currentBucketIndex < localBuckets.length - 1 ? currentBucketIndex + 1 : 0;
+    setCurrentBucketIndex(newIndex);
+    currentBucketIndexRef.current = newIndex;
+    
+    const selectedBucket = localBuckets[newIndex];
+    if (selectedBucket) {
+      setSelectedOption(selectedBucket.name);
+      setSelectedBucketId(selectedBucket.id);
+      selectedOptionRef.current = selectedBucket.name;
+      selectedBucketIdRef.current = selectedBucket.id;
+      console.log('ActionBar: Next bucket selected:', {
+        name: selectedBucket.name,
+        id: selectedBucket.id,
+        index: newIndex
+      });
     }
   };
 
@@ -749,22 +771,22 @@ const ActionBar = () => {
     }
   };
 
-  // Close dropdown when clicking outside
+  // Update current bucket when buckets change
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
+    if (localBuckets.length > 0 && currentBucketIndex >= localBuckets.length) {
+      // Reset to first bucket if current index is out of bounds
+      setCurrentBucketIndex(0);
+      currentBucketIndexRef.current = 0;
+      
+      const firstBucket = localBuckets[0];
+      if (firstBucket) {
+        setSelectedOption(firstBucket.name);
+        setSelectedBucketId(firstBucket.id);
+        selectedOptionRef.current = firstBucket.name;
+        selectedBucketIdRef.current = firstBucket.id;
       }
-    };
-
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isDropdownOpen]);
+  }, [localBuckets, currentBucketIndex]);
 
   return (
     <HoverComponent>
@@ -828,114 +850,132 @@ const ActionBar = () => {
           filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
         }} />
 
-        {/* Action bar background */}
-        <div style={{
-          background: themeColors.primaryBackground,
-          backdropFilter: 'blur(10px)',
-          borderRadius: '8px',
-          padding: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: '0 6px 24px rgba(0, 0, 0, 0.4)',
-          border: `1px solid ${themeColors.borderColor}`,
-          minWidth: '180px',
-          position: 'relative'
-        }}>
-          {/* Dropdown */}
-          <div ref={dropdownRef} style={{ position: 'relative', flex: 1 }}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              style={{
-                background: themeColors.surfaceBackground,
-                border: `1px solid ${themeColors.borderColor}`,
-                borderRadius: '6px',
-                padding: '8px 12px',
-                color: themeColors.primaryText,
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                transition: 'all 0.2s ease',
-                minWidth: '120px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = themeColors.hoverBackground;
-                e.target.style.borderColor = themeColors.primaryBlue;
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = themeColors.surfaceBackground;
-                e.target.style.borderColor = themeColors.borderColor;
-              }}
-            >
-              <span>{selectedOption}</span>
-              <svg 
-                width="12" 
-                height="12" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
-                style={{
-                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease'
-                }}
-              >
-                <polyline points="6,9 12,15 18,9"></polyline>
-              </svg>
-            </button>
+         {/* Action bar background */}
+         <div style={{
+           background: themeColors.primaryBackground,
+           backdropFilter: 'blur(10px)',
+           borderRadius: '8px',
+           padding: '8px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '8px',
+           boxShadow: '0 6px 24px rgba(0, 0, 0, 0.4)',
+           border: `1px solid ${themeColors.borderColor}`,
+           minWidth: '160px',
+           position: 'relative'
+         }}>
+           {/* Bucket Navigation */}
+           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+             {/* Previous Button */}
+             <button
+               onClick={handlePreviousBucket}
+               disabled={localBuckets.length === 0}
+               style={{
+                 background: localBuckets.length === 0 ? '#6B7280' : themeColors.surfaceBackground,
+                 border: `1px solid ${localBuckets.length === 0 ? '#6B7280' : themeColors.borderColor}`,
+                 borderRadius: '4px',
+                 padding: '4px 6px',
+                 color: localBuckets.length === 0 ? '#9CA3AF' : themeColors.primaryText,
+                 fontSize: '10px',
+                 cursor: localBuckets.length === 0 ? 'not-allowed' : 'pointer',
+                 transition: 'all 0.2s ease',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 minWidth: '24px',
+                 opacity: localBuckets.length === 0 ? 0.5 : 1
+               }}
+               onMouseEnter={(e) => {
+                 if (localBuckets.length > 0) {
+                   e.target.style.background = themeColors.hoverBackground;
+                   e.target.style.borderColor = themeColors.primaryBlue;
+                 }
+               }}
+               onMouseLeave={(e) => {
+                 if (localBuckets.length > 0) {
+                   e.target.style.background = themeColors.surfaceBackground;
+                   e.target.style.borderColor = themeColors.borderColor;
+                 }
+               }}
+               title="Previous bucket"
+             >
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                 <polyline points="15,18 9,12 15,6"></polyline>
+               </svg>
+             </button>
 
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                background: themeColors.surfaceBackground,
-                border: `1px solid ${themeColors.borderColor}`,
-                borderRadius: '6px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                zIndex: 10003,
-                marginTop: '4px',
-                overflow: 'hidden'
-              }}>
-                {dropdownOptions.map((option, index) => {
-                  const bucket = localBuckets.find(b => b.name === option);
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleOptionSelect(option)}
-                      title={bucket ? `Bucket ID: ${bucket.id}` : ''}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        padding: '8px 12px',
-                        color: themeColors.primaryText,
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: 'left',
-                        transition: 'background 0.2s ease',
-                        borderBottom: index < dropdownOptions.length - 1 ? `1px solid ${themeColors.borderColor}` : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = themeColors.hoverBackground;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'transparent';
-                      }}
-                    >
-                      {option}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+             {/* Current Bucket Name Display */}
+             <div style={{
+               background: themeColors.surfaceBackground,
+               border: `1px solid ${themeColors.borderColor}`,
+               borderRadius: '6px',
+               padding: '6px 10px',
+               color: themeColors.primaryText,
+               fontSize: '11px',
+               fontWeight: '600',
+               textAlign: 'center',
+               minWidth: '60px',
+               maxWidth: '80px',
+               overflow: 'hidden',
+               textOverflow: 'ellipsis',
+               whiteSpace: 'nowrap'
+             }}>
+               {selectedOption}
+             </div>
+
+             {/* Next Button */}
+             <button
+               onClick={handleNextBucket}
+               disabled={localBuckets.length === 0}
+               style={{
+                 background: localBuckets.length === 0 ? '#6B7280' : themeColors.surfaceBackground,
+                 border: `1px solid ${localBuckets.length === 0 ? '#6B7280' : themeColors.borderColor}`,
+                 borderRadius: '4px',
+                 padding: '4px 6px',
+                 color: localBuckets.length === 0 ? '#9CA3AF' : themeColors.primaryText,
+                 fontSize: '10px',
+                 cursor: localBuckets.length === 0 ? 'not-allowed' : 'pointer',
+                 transition: 'all 0.2s ease',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 minWidth: '24px',
+                 opacity: localBuckets.length === 0 ? 0.5 : 1
+               }}
+               onMouseEnter={(e) => {
+                 if (localBuckets.length > 0) {
+                   e.target.style.background = themeColors.hoverBackground;
+                   e.target.style.borderColor = themeColors.primaryBlue;
+                 }
+               }}
+               onMouseLeave={(e) => {
+                 if (localBuckets.length > 0) {
+                   e.target.style.background = themeColors.surfaceBackground;
+                   e.target.style.borderColor = themeColors.borderColor;
+                 }
+               }}
+               title="Next bucket"
+             >
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                 <polyline points="9,18 15,12 9,6"></polyline>
+               </svg>
+             </button>
+
+             {/* Counter Display - After the navigation buttons */}
+             <div style={{
+               background: themeColors.surfaceBackground,
+               border: `1px solid ${themeColors.borderColor}`,
+               borderRadius: '6px',
+               padding: '6px 8px',
+               color: themeColors.secondaryText,
+               fontSize: '10px',
+               fontWeight: '500',
+               textAlign: 'center',
+               minWidth: '40px'
+             }}>
+               {localBuckets.length > 0 ? `${currentBucketIndex + 1}/${localBuckets.length}` : '0/0'}
+             </div>
+           </div>
 
           {/* Action Button with Status Indicator */}
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
