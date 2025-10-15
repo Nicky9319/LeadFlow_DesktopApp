@@ -161,53 +161,51 @@ const BucketSelector = ({
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[9999] bg-[#1C1C1E] border border-[#2D2D2F] rounded-lg shadow-2xl min-w-[250px] max-w-[300px]"
+          className="fixed z-[9999] bg-[#1C1C1E] border border-[#2D2D2F] rounded-xl shadow-2xl min-w-[200px] max-w-[240px] backdrop-blur-sm"
           style={{
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
-            maxHeight: '300px',
+            maxHeight: '240px',
             position: 'fixed',
             transform: 'none'
           }}
         >
           {/* Header */}
-          <div className="p-3 border-b border-[#2D2D2F]">
+          <div className="px-3 py-2 border-b border-[#2D2D2F]">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-[#E5E5E7]">Move to Bucket</h3>
+              <h3 className="text-xs font-semibold text-[#E5E5E7]">Move Lead</h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] hover:bg-[#2D2D2F] rounded transition-colors"
+                className="p-1 text-[#8E8E93] hover:text-[#FFFFFF] hover:bg-[#2D2D2F] rounded-md transition-colors"
                 title="Close"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-[#8E8E93] mt-1">Select a bucket to move this lead to</p>
           </div>
 
           {/* Scrollable Bucket List */}
-          <div className="max-h-[200px] overflow-y-auto">
+          <div className="max-h-[160px] overflow-y-auto">
             {availableBuckets.map((bucket) => (
               <button
                 key={bucket.id}
                 onClick={() => handleBucketSelect(bucket.id)}
                 disabled={isLoading}
-                className="w-full text-left px-3 py-3 text-sm text-[#E5E5E7] hover:bg-[#2D2D2F] hover:text-[#FFFFFF] transition-colors disabled:opacity-50 border-b border-[#2D2D2F] last:border-b-0"
+                className="w-full text-left px-3 py-2 text-sm text-[#E5E5E7] hover:bg-[#2D2D2F] hover:text-[#FFFFFF] transition-colors disabled:opacity-50 border-b border-[#2D2D2F] last:border-b-0 group"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-[#007AFF] rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-gradient-to-br from-[#007AFF] to-[#0056CC] rounded-md flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-[#E5E5E7] truncate">{bucket.name}</div>
-                    <div className="text-xs text-[#8E8E93]">Click to move lead here</div>
+                    <div className="font-medium text-[#E5E5E7] truncate text-xs">{bucket.name}</div>
                   </div>
                   {isLoading && (
-                    <svg className="w-4 h-4 animate-spin text-[#007AFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 animate-spin text-[#007AFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   )}
@@ -217,9 +215,9 @@ const BucketSelector = ({
           </div>
 
           {/* Footer */}
-          <div className="p-3 border-t border-[#2D2D2F] bg-[#111111] rounded-b-lg">
+          <div className="px-3 py-1.5 border-t border-[#2D2D2F] bg-[#111111] rounded-b-xl">
             <div className="text-xs text-[#8E8E93] text-center">
-              {availableBuckets.length} bucket{availableBuckets.length !== 1 ? 's' : ''} available
+              {availableBuckets.length} available
             </div>
           </div>
         </div>,
