@@ -159,17 +159,40 @@ const BucketSelector = ({
 
       {/* Floating Dropdown Menu - Using Portal to render outside DOM hierarchy */}
       {isOpen && createPortal(
-        <div
-          ref={dropdownRef}
-          className="fixed z-[9999] bg-[#1C1C1E] border border-[#2D2D2F] rounded-xl shadow-2xl min-w-[200px] max-w-[240px] backdrop-blur-sm"
-          style={{
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            maxHeight: '240px',
-            position: 'fixed',
-            transform: 'none'
-          }}
-        >
+        <>
+          {/* Custom scrollbar styles */}
+          <style>
+            {`
+              .bucket-selector-scroll::-webkit-scrollbar {
+                width: 4px;
+              }
+              .bucket-selector-scroll::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .bucket-selector-scroll::-webkit-scrollbar-thumb {
+                background: #2D2D2F;
+                border-radius: 2px;
+              }
+              .bucket-selector-scroll::-webkit-scrollbar-thumb:hover {
+                background: #3D3D3F;
+              }
+              .bucket-selector-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: #2D2D2F transparent;
+              }
+            `}
+          </style>
+          <div
+            ref={dropdownRef}
+            className="fixed z-[9999] bg-[#1C1C1E] border border-[#2D2D2F] rounded-xl shadow-2xl min-w-[200px] max-w-[240px] backdrop-blur-sm"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              maxHeight: '240px',
+              position: 'fixed',
+              transform: 'none'
+            }}
+          >
           {/* Header */}
           <div className="px-3 py-2 border-b border-[#2D2D2F]">
             <div className="flex items-center justify-between">
@@ -187,7 +210,7 @@ const BucketSelector = ({
           </div>
 
           {/* Scrollable Bucket List */}
-          <div className="max-h-[160px] overflow-y-auto">
+          <div className="max-h-[160px] overflow-y-auto bucket-selector-scroll">
             {availableBuckets.map((bucket) => (
               <button
                 key={bucket.id}
@@ -220,7 +243,8 @@ const BucketSelector = ({
               {availableBuckets.length} available
             </div>
           </div>
-        </div>,
+        </div>
+        </>,
         document.body
       )}
     </>
