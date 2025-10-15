@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LeadsContainer from './components/LeadsContainer';
-import { getAllLeads, updateLeadStatus as apiUpdateLeadStatus, updateLeadNotes as apiUpdateLeadNotes, deleteLead as apiDeleteLead } from '../../../services/leadsService';
+import { getAllLeads, updateLeadStatus as apiUpdateLeadStatus, updateLeadNotes as apiUpdateLeadNotes, deleteLead as apiDeleteLead, moveLeadToBucket as apiMoveLeadToBucket } from '../../../services/leadsService';
 import { getAllBuckets } from '../../../services/bucketsServices';
 
 const Leads = () => {
@@ -97,6 +97,36 @@ const Leads = () => {
       }
     } catch (error) {
       console.error('Error deleting lead:', error);
+    }
+  };
+
+  // Function to move lead to different bucket
+  const moveLeadToBucket = async (leadId, targetBucketId, sourceBucketId) => {
+    try {
+      console.log('Moving lead:', { leadId, targetBucketId, sourceBucketId });
+      const response = await apiMoveLeadToBucket(leadId, targetBucketId, sourceBucketId);
+      
+      if (response.status_code === 200) {
+        // Remove lead from current bucket's leads list
+        setLeads(prevLeads => 
+          prevLeads.filter(lead => lead.leadId !== leadId)
+        );
+        
+        // If we're currently viewing the source bucket, the lead should disappear
+        // If we're viewing the target bucket, we should refresh to show the moved lead
+        if (selectedBucketId === targetBucketId) {
+          // Refresh leads to show the moved lead in the target bucket
+          await fetchLeads(targetBucketId);
+        }
+        
+        console.log('Lead moved successfully to bucket:', targetBucketId);
+      } else {
+        console.error('Failed to move lead:', response.content);
+        throw new Error(response.content?.detail || 'Failed to move lead');
+      }
+    } catch (error) {
+      console.error('Error moving lead:', error);
+      throw error; // Re-throw to let the BucketSelector handle the error
     }
   };
 
@@ -205,7 +235,15 @@ const Leads = () => {
           </div>
         </div>
         
-        <LeadsContainer leads={leads} updateLeadNotes={updateLeadNotes} updateLeadStatus={updateLeadStatus} deleteLead={deleteLead} />
+        <LeadsContainer 
+          leads={leads} 
+          updateLeadNotes={updateLeadNotes} 
+          updateLeadStatus={updateLeadStatus} 
+          deleteLead={deleteLead}
+          moveLeadToBucket={moveLeadToBucket}
+          buckets={buckets}
+          currentBucketId={selectedBucketId}
+        />
       </div>
     </div>
   );

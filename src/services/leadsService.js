@@ -272,4 +272,44 @@ const deleteLead = async (leadId, bucketId = null) => {
   }
 };
 
-export { getAllLeads, updateLeadStatus, updateLeadNotes, addLead, deleteLead };
+// Move lead to different bucket
+const moveLeadToBucket = async (leadId, targetBucketId, sourceBucketId = null) => {
+  console.log('🔄 leadsService.moveLeadToBucket called with:', {
+    leadId: leadId,
+    targetBucketId: targetBucketId,
+    sourceBucketId: sourceBucketId
+  });
+  logger.info('moveLeadToBucket called', { leadId, targetBucketId, sourceBucketId });
+
+  if (!leadId || !targetBucketId) {
+    console.error('❌ leadsService.moveLeadToBucket: leadId and targetBucketId are required');
+    logger.error('moveLeadToBucket: leadId and targetBucketId are required');
+    return { status_code: 400, content: { detail: 'lead_id and new_bucket_id are required' } };
+  }
+
+  try {
+    const body = { 
+      lead_id: leadId, 
+      new_bucket_id: targetBucketId 
+    };
+
+    console.log('📤 leadsService.moveLeadToBucket: Making request with body:', body);
+    logger.debug('moveLeadToBucket: Making PUT request', body);
+
+    const resp = await request('/api/main-service/leads/change-lead-bucket', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    console.log('📥 leadsService.moveLeadToBucket: Response received:', resp);
+    logger.info('moveLeadToBucket: Completed', { status: resp.status_code, success: resp.status_code === 200 });
+    
+    return resp;
+  } catch (error) {
+    console.error('💥 leadsService.moveLeadToBucket: Error:', error);
+    logger.error('moveLeadToBucket: Exception caught', { error: error.message, stack: error.stack });
+    return { status_code: 503, content: { detail: String(error) } };
+  }
+};
+
+export { getAllLeads, updateLeadStatus, updateLeadNotes, addLead, deleteLead, moveLeadToBucket };

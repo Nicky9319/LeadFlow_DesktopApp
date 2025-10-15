@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import BucketSelector from './BucketSelector';
 
-const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus, deleteLead }) => {
+const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus, deleteLead, moveLeadToBucket, buckets = [], currentBucketId }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
   const [isEditingStatus, setIsEditingStatus] = useState(false);
@@ -222,6 +223,19 @@ const LeadCard = ({ lead, isActive, updateLeadNotes, updateLeadStatus, deleteLea
             </button>
           </div>
         </div>
+
+        {/* Bucket Selector */}
+        {buckets.length > 1 && (
+          <div className="mb-3">
+            <BucketSelector
+              buckets={buckets}
+              currentBucketId={currentBucketId}
+              onBucketChange={moveLeadToBucket}
+              leadId={lead.leadId}
+              className="flex items-center"
+            />
+          </div>
+        )}
 
         {/* Profile URL */}
         {lead.url && (
