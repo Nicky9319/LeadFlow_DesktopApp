@@ -431,11 +431,12 @@ const ActionBar = () => {
     console.log('ActionBar: Current validation state:', {
       selectedOption,
       selectedBucketId,
+      currentBucketIndex,
+      currentBucketIndexRef: currentBucketIndexRef.current,
       bucketsLength: buckets ? buckets.length : 'null/undefined',
       localBucketsLength: localBuckets.length,
       buckets: buckets,
-      localBuckets: localBuckets,
-      currentBucketIndex: currentBucketIndex
+      localBuckets: localBuckets
     });
     
     // Check if a valid option is selected
@@ -458,15 +459,28 @@ const ActionBar = () => {
         }
       }
       
-      // Auto-select first bucket if available
+      // Auto-select bucket if available - use current index if valid, otherwise first bucket
       if (availableBuckets && availableBuckets.length > 0) {
-        const firstBucket = availableBuckets[0].name;
-        const firstBucketId = availableBuckets[0].id;
-        setSelectedOption(firstBucket);
-        setSelectedBucketId(firstBucketId);
-        selectedOptionRef.current = firstBucket;
-        selectedBucketIdRef.current = firstBucketId;
-        console.log('ActionBar: Auto-selected option:', firstBucket, 'with ID:', firstBucketId);
+        // Use current bucket index if it's valid, otherwise use first bucket
+        const targetIndex = (currentBucketIndexRef.current < availableBuckets.length) ? 
+                           currentBucketIndexRef.current : 0;
+        const targetBucket = availableBuckets[targetIndex];
+        
+        console.log('ActionBar: Auto-selection logic:', {
+          currentBucketIndexRef: currentBucketIndexRef.current,
+          availableBucketsLength: availableBuckets.length,
+          targetIndex,
+          targetBucket: targetBucket ? { name: targetBucket.name, id: targetBucket.id } : 'null'
+        });
+        
+        setSelectedOption(targetBucket.name);
+        setSelectedBucketId(targetBucket.id);
+        setCurrentBucketIndex(targetIndex);
+        selectedOptionRef.current = targetBucket.name;
+        selectedBucketIdRef.current = targetBucket.id;
+        currentBucketIndexRef.current = targetIndex;
+        
+        console.log('ActionBar: Auto-selected option:', targetBucket.name, 'with ID:', targetBucket.id, 'at index:', targetIndex);
         
         // Show brief feedback that option was auto-selected
         setGlobalShortcutFeedback(true);
@@ -698,16 +712,28 @@ const ActionBar = () => {
     if (!selectedOption || selectedOption === 'Select Option') {
       console.log('ActionBar: No valid option selected from button, auto-selecting first available option');
       
-      // Auto-select first bucket if available
+      // Auto-select bucket if available - use current index if valid, otherwise first bucket
       const availableBucketsForButton = localBuckets.length > 0 ? localBuckets : buckets;
       if (availableBucketsForButton && availableBucketsForButton.length > 0) {
-        const firstBucket = availableBucketsForButton[0].name;
-        const firstBucketId = availableBucketsForButton[0].id;
-        setSelectedOption(firstBucket);
-        setSelectedBucketId(firstBucketId);
-        selectedOptionRef.current = firstBucket;
-        selectedBucketIdRef.current = firstBucketId;
-        console.log('ActionBar: Auto-selected option from button click:', firstBucket, 'with ID:', firstBucketId);
+        // Use current bucket index if it's valid, otherwise use first bucket
+        const targetIndex = (currentBucketIndexRef.current < availableBucketsForButton.length) ? 
+                           currentBucketIndexRef.current : 0;
+        const targetBucket = availableBucketsForButton[targetIndex];
+        
+        console.log('ActionBar: Button auto-selection logic:', {
+          currentBucketIndexRef: currentBucketIndexRef.current,
+          availableBucketsLength: availableBucketsForButton.length,
+          targetIndex,
+          targetBucket: targetBucket ? { name: targetBucket.name, id: targetBucket.id } : 'null'
+        });
+        
+        setSelectedOption(targetBucket.name);
+        setSelectedBucketId(targetBucket.id);
+        setCurrentBucketIndex(targetIndex);
+        selectedOptionRef.current = targetBucket.name;
+        selectedBucketIdRef.current = targetBucket.id;
+        currentBucketIndexRef.current = targetIndex;
+        console.log('ActionBar: Auto-selected option from button click:', targetBucket.name, 'with ID:', targetBucket.id, 'at index:', targetIndex);
         
         // Continue with screenshot after auto-selection
         setTimeout(() => {
