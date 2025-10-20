@@ -23,9 +23,19 @@ const LeadsContainer = ({ leads = [], updateLeadNotes, updateLeadStatus, deleteL
   const [isEditingRightSensitivity, setIsEditingRightSensitivity] = useState(false);
   const [editRightSensitivityValue, setEditRightSensitivityValue] = useState('');
 
-  // Reset to first lead when leads change
+  // Preserve current lead index when leads change
   useEffect(() => {
-    setCurrentIndex(0);
+    if (leads.length === 0) {
+      setCurrentIndex(0);
+      return;
+    }
+    setCurrentIndex(prevIndex => {
+      // Try to preserve the current lead by leadId
+      const prevLead = leads[prevIndex];
+      if (!prevLead) return 0;
+      const foundIdx = leads.findIndex(l => l.leadId === prevLead.leadId);
+      return foundIdx !== -1 ? foundIdx : 0;
+    });
   }, [leads]);
 
   // Add keyboard navigation
